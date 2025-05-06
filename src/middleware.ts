@@ -1,14 +1,19 @@
-import { getToken } from 'next-auth/jwt'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { getToken } from 'next-auth/jwt';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/unauthorized', '/api'];
 
 export async function middleware(req: NextRequest) {
+  console.log('[Middleware] Ejecutando para:', req.nextUrl.pathname);
+
   const { pathname } = req.nextUrl;
 
-  // Permitir rutas públicas y estáticas
-  if (PUBLIC_PATHS.some((path) => pathname.startsWith(path)) || pathname.startsWith('/_next')) {
+  if (
+    PUBLIC_PATHS.some((path) => pathname.startsWith(path)) ||
+    pathname.startsWith('/_next') ||
+    pathname.includes('.')
+  ) {
     return NextResponse.next();
   }
 
@@ -16,7 +21,7 @@ export async function middleware(req: NextRequest) {
 
   if (!token) {
     const loginUrl = new URL('/login', req.url);
-    loginUrl.searchParams.set('callbackUrl', req.url); // opcional: para redirigir después
+    loginUrl.searchParams.set('callbackUrl', req.url);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -27,7 +32,6 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Protege todas las rutas dentro del dashboard y admin
 export const config = {
   matcher: ['/', '/dashboard/:path*', '/inventario/:path*', '/historial/:path*', '/admin/:path*'],
 };

@@ -8,8 +8,9 @@ import { DynamicTable } from '@/components/ui/DynamicTable';
 import InventoryFilters, {
   InventoryFilters as FilterValues,
 } from '@/components/inventory/InventoryFilters';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus, Upload } from 'lucide-react';
 import CreateProductModal from '@/components/inventory/CreateProductModal';
+import GroupUploadModal from '@/components/ui/GroupUploadModal';
 
 type Inventory = {
   id: string;
@@ -27,6 +28,7 @@ export default function InventarioPage() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [modalType, setModalType] = useState<ModalType>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
 
   const [filters, setFilters] = useState<FilterValues>({});
   const [page, setPage] = useState(1);
@@ -102,13 +104,24 @@ export default function InventarioPage() {
     <div className='p-4'>
       <div className='flex justify-between items-center mb-4'>
         <h1 className='text-xl font-bold text-gray-800'>Inventario</h1>
-        <button
-          onClick={() => setCreateModalOpen(true)}
-          className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm'
-        >
-          + Nuevo Producto
-        </button>
+        <div className='flex gap-2'>
+          <button
+            onClick={() => setCreateModalOpen(true)}
+            className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm flex items-center gap-2'
+          >
+            <Plus className='w-4 h-4' />
+            Nuevo Producto
+          </button>
+          <button
+            onClick={() => setBulkUploadOpen(true)}
+            className='bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition text-sm flex items-center gap-2'
+          >
+            <Upload className='w-4 h-4' />
+            Cargue Grupal
+          </button>
+        </div>
       </div>
+
       <InventoryFilters
         fields={['name', 'type', 'unit', 'quantity']}
         onChange={(newFilters) => {
@@ -178,6 +191,14 @@ export default function InventarioPage() {
         <CreateProductModal
           open={createModalOpen}
           onClose={() => setCreateModalOpen(false)}
+          onSuccess={fetchInventory}
+        />
+      )}
+
+      {bulkUploadOpen && (
+        <GroupUploadModal
+          open={bulkUploadOpen}
+          onClose={() => setBulkUploadOpen(false)}
           onSuccess={fetchInventory}
         />
       )}

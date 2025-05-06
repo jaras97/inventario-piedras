@@ -59,7 +59,7 @@ export default function LoginForm() {
   // 🌀 Muestra loader suave mientras detecta el estado de sesión
   if (status === 'loading') {
     return (
-      <div className='flex items-center justify-center min-h-screen bg-white'>
+      <div className='fixed inset-0 flex items-center justify-center bg-white z-50'>
         <motion.div
           className='w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin'
           initial={{ opacity: 0, scale: 0.8 }}
