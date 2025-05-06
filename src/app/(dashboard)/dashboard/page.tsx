@@ -2,7 +2,28 @@
 
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { Loader2 } from 'lucide-react';
+import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
+import { DynamicTable } from '@/components/ui/DynamicTable';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
+
+type Movement = {
+  id: string;
+  createdAt: string;
+  type: 'ENTRADA' | 'SALIDA';
+  amount: number;
+  itemName: string;
+  user: string;
+};
 
 export default function DashboardPage() {
   const { data, error, isLoading } = useDashboardData();
@@ -19,6 +40,39 @@ export default function DashboardPage() {
   if (error || !data) {
     return <p className='text-red-600'>Error al cargar el dashboard</p>;
   }
+
+  const columns: ColumnDef<Movement>[] = [
+    {
+      header: 'Fecha',
+      accessorFn: (row) => format(new Date(row.createdAt), 'dd/MM/yyyy HH:mm'),
+    },
+    { header: 'Material', accessorKey: 'itemName' },
+    {
+      header: 'Tipo',
+      accessorKey: 'type',
+      cell: ({ row }) => (
+        <span
+          className={`px-2 py-1 text-xs font-semibold rounded ${
+            row.original.type === 'ENTRADA'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-red-100 text-red-700'
+          }`}
+        >
+          {row.original.type}
+        </span>
+      ),
+    },
+    { header: 'Cantidad', accessorKey: 'amount' },
+    { header: 'Usuario', accessorKey: 'user' },
+  ];
+
+  const chartData = [
+    {
+      name: 'Movimientos',
+      Entradas: data.totalEntradas,
+      Salidas: data.totalSalidas,
+    },
+  ];
 
   return (
     <div className='p-6 space-y-6'>
@@ -37,46 +91,31 @@ export default function DashboardPage() {
         />
       </section>
 
+      {/* Gráfica */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Resumen gráfico</CardTitle>
+        </CardHeader>
+        <CardContent className='h-72'>
+          <ResponsiveContainer width='100%' height='100%'>
+            <BarChart data={chartData}>
+              <XAxis dataKey='name' />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey='Entradas' fill='#22c55e' />
+              <Bar dataKey='Salidas' fill='#ef4444' />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
       {/* Últimos movimientos */}
-      <section>
-        <h2 className='text-lg font-semibold mb-2'>Últimos movimientos</h2>
-        <div className='overflow-auto border rounded'>
-          <table className='min-w-full text-sm text-left border-collapse'>
-            <thead className='bg-gray-100'>
-              <tr>
-                <th className='px-4 py-2 border-b'>Fecha</th>
-                <th className='px-4 py-2 border-b'>Material</th>
-                <th className='px-4 py-2 border-b'>Tipo</th>
-                <th className='px-4 py-2 border-b'>Cantidad</th>
-                <th className='px-4 py-2 border-b'>Usuario</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.lastMovements.map((mov) => (
-                <tr key={mov.id} className='hover:bg-gray-50'>
-                  <td className='px-4 py-2 border-b'>
-                    {format(new Date(mov.createdAt), 'dd/MM/yyyy HH:mm')}
-                  </td>
-                  <td className='px-4 py-2 border-b'>{mov.itemName}</td>
-                  <td className='px-4 py-2 border-b'>
-                    <span
-                      className={`px-2 py-1 text-xs font-semibold rounded ${
-                        mov.type === 'ENTRADA'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {mov.type}
-                    </span>
-                  </td>
-                  <td className='px-4 py-2 border-b'>{mov.amount}</td>
-                  <td className='px-4 py-2 border-b'>{mov.user}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <DynamicTable
+        title='Últimos Movimientos'
+        data={data.lastMovements}
+        columns={columns}
+      />
     </div>
   );
 }
@@ -90,16 +129,20 @@ function SummaryCard({
   value: number;
   color?: 'blue' | 'green' | 'red';
 }) {
-  const bgMap = {
-    blue: 'bg-blue-100 text-blue-800',
-    green: 'bg-green-100 text-green-800',
-    red: 'bg-red-100 text-red-800',
+  const colorMap = {
+    blue: 'text-blue-600',
+    green: 'text-green-600',
+    red: 'text-red-600',
   };
 
   return (
-    <div className={`rounded p-4 shadow-sm ${bgMap[color]}`}>
-      <p className='text-sm font-medium'>{title}</p>
-      <p className='text-2xl font-bold mt-1'>{value}</p>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className='text-sm'>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className={`text-2xl font-bold ${colorMap[color]}`}>{value}</p>
+      </CardContent>
+    </Card>
   );
 }

@@ -68,14 +68,28 @@ enum Role {
 // 💎 Inventario de piedras
 // ───────────────────────────
 
+model InventoryType {
+  id    String          @id @default(cuid())
+  name  String          @unique
+  items InventoryItem[]
+}
+
+model InventoryUnit {
+  id    String          @id @default(cuid())
+  name  String          @unique
+  items InventoryItem[]
+}
+
 model InventoryItem {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   name      String
-  type      String // ej: "oro", "esmeralda"
-  unit      String // ej: "gramos", "kilates", "unidad"
-  quantity  Float    @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  typeId    String
+  unitId    String
+  type      InventoryType @relation(fields: [typeId], references: [id])
+  unit      InventoryUnit @relation(fields: [unitId], references: [id])
+  quantity  Float         @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   // Historial de movimientos
   transactions InventoryTransaction[]

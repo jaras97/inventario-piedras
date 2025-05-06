@@ -11,12 +11,25 @@ export default function SidebarLayout() {
   const pathname = usePathname();
 
   return (
-    <div className='min-h-screen flex'>
+    <>
+      {/* Overlay al abrir el sidebar en mobile */}
+      {open && (
+        <div
+          className={`fixed inset-0 bg-[rgba(0,0,0,0.08)] z-40 transition-opacity duration-300 lg:hidden ${
+            open
+              ? 'opacity-100 pointer-events-auto'
+              : 'opacity-0 pointer-events-none'
+          }`}
+          onClick={() => setOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`bg-gray-50 text-gray-800 w-64 flex flex-col justify-between p-6 shadow-md z-50 
-          ${open ? 'block' : 'hidden'} 
-          fixed inset-y-0 left-0 lg:block lg:relative lg:inset-auto lg:h-screen`}
+        className={`bg-gray-50 text-gray-800 w-64 flex flex-col justify-between p-6 shadow-md z-50
+  fixed inset-y-0 left-0 transform transition-transform duration-300 ease-in-out
+  ${open ? 'translate-x-0' : '-translate-x-full'} 
+  lg:translate-x-0 lg:relative lg:inset-auto lg:h-screen`}
       >
         <div>
           <h2 className='text-2xl font-bold mb-8 text-blue-600'>Inventario</h2>
@@ -33,7 +46,6 @@ export default function SidebarLayout() {
           </nav>
         </div>
 
-        {/* Cerrar sesión */}
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
           className='flex items-center gap-2 text-sm text-gray-600 hover:text-red-500 transition mt-6'
@@ -50,13 +62,19 @@ export default function SidebarLayout() {
         </button>
       </aside>
 
-      {/* Toggle en mobile */}
-      <div className='lg:hidden p-4'>
-        <button onClick={() => setOpen(true)}>
-          <Menu className='text-gray-600' />
-        </button>
-      </div>
-    </div>
+      {/* Botón toggle hamburguesa */}
+
+      <button
+        onClick={() => setOpen(true)}
+        className={`lg:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-full shadow-md transition-all duration-300 ease-in-out transform ${
+          open
+            ? 'opacity-0 scale-95 pointer-events-none'
+            : 'opacity-100 scale-100'
+        }`}
+      >
+        <Menu className='text-gray-600' />
+      </button>
+    </>
   );
 }
 

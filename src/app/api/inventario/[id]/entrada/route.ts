@@ -30,7 +30,7 @@ export async function POST(
         itemId: id,
         type: 'ENTRADA',
         amount,
-        userId: session?.user.id || null,
+        userId: session?.user?.id || null, // ✅ usa safe access
       },
     });
 
