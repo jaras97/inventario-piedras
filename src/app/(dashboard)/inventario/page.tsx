@@ -8,44 +8,61 @@ import { DynamicTable } from '@/components/ui/DynamicTable';
 import InventoryFilters, {
   InventoryFilters as FilterValues,
 } from '@/components/inventory/InventoryFilters';
-import { Loader2, Plus, Upload } from 'lucide-react';
+import { Loader2, Plus, Upload, Pencil } from 'lucide-react';
 import CreateProductModal from '@/components/inventory/CreateProductModal';
 import GroupUploadModal from '@/components/ui/GroupUploadModal';
+import { useSession } from 'next-auth/react';
+import { hasWriteAccess } from '@/lib/auth/roles';
+import GroupSellModal from '@/components/ui/GroupSellModal';
+import EditProductModal from '@/components/inventory/EditProductModal';
 
+// Tipos
 type Inventory = {
   id: string;
   name: string;
-  type: string;
-  unit: string;
+  typeId: string;
+  type: { name: string; id: string };
+  unit: { id: string; name: string; valueType: 'INTEGER' | 'DECIMAL' };
   quantity: number;
+  price: number;
 };
 
 type ModalType = 'LOAD' | 'SELL' | null;
 
 export default function InventarioPage() {
+  const { data: session } = useSession();
+  const role = session?.user?.role ?? '';
+  const isAdmin = hasWriteAccess(role);
+
+  const [groupSellOpen, setGroupSellOpen] = useState(false);
   const [data, setData] = useState<Inventory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Inventory | null>(null);
   const [modalType, setModalType] = useState<ModalType>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
-
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Inventory | null>(null);
   const [filters, setFilters] = useState<FilterValues>({});
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 10;
-
   const [types, setTypes] = useState<{ id: string; name: string }[]>([]);
   const [units, setUnits] = useState<{ id: string; name: string }[]>([]);
 
-  const openModal = (id: string, type: ModalType) => {
-    setSelectedItemId(id);
+  const openModal = (item: Inventory, type: ModalType) => {
+    setSelectedItem(item);
     setModalType(type);
   };
 
   const closeModal = () => {
-    setSelectedItemId(null);
+    setSelectedItem(null);
     setModalType(null);
+  };
+
+  const handleEdit = (item: Inventory) => {
+    setEditingProduct(item);
+    setEditModalOpen(true);
   };
 
   const fetchInventory = async () => {
@@ -75,7 +92,6 @@ export default function InventarioPage() {
 
   useEffect(() => {
     fetchInventory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, filters]);
 
   useEffect(() => {
@@ -95,9 +111,25 @@ export default function InventarioPage() {
 
   const columns: ColumnDef<Inventory>[] = [
     { accessorKey: 'name', header: 'Nombre' },
-    { accessorKey: 'type', header: 'Tipo' },
-    { accessorKey: 'unit', header: 'Unidad' },
+    {
+      accessorKey: 'type.name',
+      header: 'Tipo',
+      cell: (info) => info.row.original.type.name,
+    },
+    {
+      accessorKey: 'unit.name',
+      header: 'Unidad',
+      cell: (info) => info.row.original.unit.name,
+    },
     { accessorKey: 'quantity', header: 'Cantidad' },
+    {
+      accessorKey: 'price',
+      header: 'Precio',
+      cell: (info) =>
+        `$${info.row.original?.price?.toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+        })}`,
+    },
   ];
 
   return (
@@ -107,20 +139,33 @@ export default function InventarioPage() {
           Inventario
         </h1>
         <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
-          <button
-            onClick={() => setCreateModalOpen(true)}
-            className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm flex items-center justify-center gap-2'
-          >
-            <Plus className='w-4 h-4' />
-            Nuevo Producto
-          </button>
-          <button
-            onClick={() => setBulkUploadOpen(true)}
-            className='bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition text-sm flex items-center justify-center gap-2'
-          >
-            <Upload className='w-4 h-4' />
-            Cargue Grupal
-          </button>
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => setCreateModalOpen(true)}
+                className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm flex items-center justify-center gap-2'
+              >
+                <Plus className='w-4 h-4' />
+                Nuevo Producto
+              </button>
+
+              <button
+                onClick={() => setBulkUploadOpen(true)}
+                className='bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition text-sm flex items-center justify-center gap-2'
+              >
+                <Upload className='w-4 h-4' />
+                Cargue Grupal
+              </button>
+
+              <button
+                onClick={() => setGroupSellOpen(true)}
+                className='bg-rose-600 text-white px-4 py-2 rounded hover:bg-rose-700 transition text-sm flex items-center justify-center gap-2'
+              >
+                <Upload className='w-4 h-4' />
+                Venta Grupal
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -147,22 +192,30 @@ export default function InventarioPage() {
           data={data ?? []}
           columns={columns}
           isLoading={loading}
-          rowActions={(item) => (
-            <div className='flex gap-2'>
-              <button
-                className='bg-blue-600 text-white px-2 py-1 rounded text-xs'
-                onClick={() => openModal(item.id, 'LOAD')}
-              >
-                Cargar
-              </button>
-              <button
-                className='bg-red-600 text-white px-2 py-1 rounded text-xs'
-                onClick={() => openModal(item.id, 'SELL')}
-              >
-                Vender
-              </button>
-            </div>
-          )}
+          rowActions={(item) =>
+            isAdmin && (
+              <div className='flex gap-2'>
+                <button
+                  className='bg-blue-600 text-white px-2 py-1 rounded text-xs'
+                  onClick={() => openModal(item, 'LOAD')}
+                >
+                  <Upload className='w-4 h-4' />
+                </button>
+                <button
+                  className='bg-red-600 text-white px-2 py-1 rounded text-xs'
+                  onClick={() => openModal(item, 'SELL')}
+                >
+                  <Upload className='w-4 h-4' />
+                </button>
+                <button
+                  className='bg-gray-600 text-white px-2 py-1 rounded text-xs'
+                  onClick={() => handleEdit(item)}
+                >
+                  <Pencil className='w-4 h-4' />
+                </button>
+              </div>
+            )
+          }
           pagination={{
             page,
             pageSize,
@@ -173,37 +226,49 @@ export default function InventarioPage() {
       )}
 
       {/* MODALES */}
-      {modalType === 'LOAD' && selectedItemId && (
+      {modalType === 'LOAD' && selectedItem && (
         <LoadModal
-          itemId={selectedItemId}
+          item={selectedItem}
           open={true}
           onClose={closeModal}
           onSuccess={fetchInventory}
         />
       )}
-      {modalType === 'SELL' && selectedItemId && (
+      {modalType === 'SELL' && selectedItem && (
         <SellModal
-          itemId={selectedItemId}
+          itemId={selectedItem.id}
+          unitId={selectedItem.unit.id}
           open={true}
           onClose={closeModal}
-          onSuccess={fetchInventory}
-        />
-      )}
-      {createModalOpen && (
-        <CreateProductModal
-          open={createModalOpen}
-          onClose={() => setCreateModalOpen(false)}
           onSuccess={fetchInventory}
         />
       )}
 
-      {bulkUploadOpen && (
-        <GroupUploadModal
-          open={bulkUploadOpen}
-          onClose={() => setBulkUploadOpen(false)}
-          onSuccess={fetchInventory}
-        />
-      )}
+      <CreateProductModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={fetchInventory}
+      />
+
+      <GroupUploadModal
+        open={bulkUploadOpen}
+        onClose={() => setBulkUploadOpen(false)}
+        onSuccess={fetchInventory}
+      />
+
+      <GroupSellModal
+        open={groupSellOpen}
+        onClose={() => setGroupSellOpen(false)}
+        onSuccess={fetchInventory}
+      />
+
+      <EditProductModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        onSuccess={fetchInventory}
+        product={editingProduct}
+        types={types}
+      />
     </div>
   );
 }

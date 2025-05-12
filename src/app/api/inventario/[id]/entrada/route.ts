@@ -28,7 +28,7 @@ export async function POST(
     await prisma.inventoryTransaction.create({
       data: {
         itemId: id,
-        type: 'ENTRADA',
+        type: 'CARGA_INDIVIDUAL',
         amount,
         userId: session?.user?.id || null, // ✅ usa safe access
       },

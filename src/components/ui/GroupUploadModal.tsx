@@ -14,6 +14,7 @@ import ManualProductTable, {
   ManualProduct,
   ProductOption,
 } from '@/components/ui/ManualProductTable';
+import { Button } from '@/components/ui/button';
 
 const tabs = [
   { key: 'file', label: 'Carga desde Archivo', icon: Upload },
@@ -42,11 +43,16 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
   const [products, setProducts] = useState<ProductOption[]>([]);
 
   useEffect(() => {
-    fetch('/api/inventario/nombres')
-      .then((res) => res.json())
-      .then((data: ProductOption[]) => setProducts(data || []))
-      .catch((err) => console.error('Error cargando productos', err));
-  }, []);
+    if (!open) return;
+
+    const fetchProducts = async () => {
+      const res = await fetch('/api/inventario/nombres');
+      const data: ProductOption[] = await res.json();
+      setProducts(data || []);
+    };
+
+    fetchProducts();
+  }, [open]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -69,7 +75,6 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
 
   const handleSubmit = async () => {
     if (loading) return;
-
     setLoading(true);
 
     try {
@@ -125,19 +130,9 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
   };
 
   return (
-    <Transition show={open} as={Fragment}>
-      <Dialog onClose={onClose} className='relative z-50'>
-        <TransitionChild
-          as={Fragment}
-          enter='ease-out duration-200'
-          enterFrom='opacity-0'
-          enterTo='opacity-100'
-          leave='ease-in duration-150'
-          leaveFrom='opacity-100'
-          leaveTo='opacity-0'
-        >
-          <div className='fixed inset-0 bg-black/30' />
-        </TransitionChild>
+    <Transition appear show={open} as={Fragment}>
+      <Dialog as='div' className='relative z-50' onClose={onClose}>
+        <div className='fixed inset-0 bg-black/30 backdrop-blur-sm' />
 
         <div className='fixed inset-0 flex items-center justify-center p-2 sm:p-4'>
           <TransitionChild
@@ -149,20 +144,20 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
             leaveFrom='opacity-100 scale-100'
             leaveTo='opacity-0 scale-95'
           >
-            <DialogPanel className='w-full max-w-3xl rounded bg-white p-4 sm:p-6 shadow-xl overflow-y-auto max-h-[90vh]'>
-              <DialogTitle className='text-lg font-bold mb-4'>
+            <DialogPanel className='w-full max-w-3xl rounded bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto'>
+              <DialogTitle className='text-lg font-semibold mb-4'>
                 Cargue Grupal de Productos
               </DialogTitle>
 
-              <div className='flex flex-col sm:flex-row flex-wrap gap-2 mb-4'>
+              <div className='flex flex-col sm:flex-row gap-2 mb-6'>
                 {tabs.map((tab) => (
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium border transition w-full sm:w-auto justify-center ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded text-sm font-medium border transition w-full sm:w-auto justify-center ${
                       activeTab === tab.key
                         ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
                     }`}
                   >
                     <tab.icon className='w-4 h-4' /> {tab.label}
@@ -194,21 +189,13 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
                 />
               )}
 
-              <div className='flex flex-col sm:flex-row justify-end gap-2 mt-6'>
-                <button
-                  onClick={onClose}
-                  className='text-sm px-4 py-2 disabled:opacity-50 border border-gray-300 rounded'
-                  disabled={loading}
-                >
+              <div className='flex justify-end gap-2 mt-6'>
+                <Button variant='outline' onClick={onClose} disabled={loading}>
                   Cancelar
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className='bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 transition disabled:opacity-50'
-                >
+                </Button>
+                <Button onClick={handleSubmit} disabled={loading}>
                   {loading ? 'Subiendo...' : 'Subir'}
-                </button>
+                </Button>
               </div>
             </DialogPanel>
           </TransitionChild>

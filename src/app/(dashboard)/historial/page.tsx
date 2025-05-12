@@ -8,16 +8,29 @@ import { DynamicTable } from '@/components/ui/DynamicTable';
 import InventoryFilters, {
   InventoryFilters as FilterValues,
 } from '@/components/inventory/InventoryFilters';
-import { Loader2 } from 'lucide-react';
+import {
+  Edit3,
+  Loader2,
+  ShoppingBag,
+  ShoppingCart,
+  Upload,
+  UploadCloud,
+} from 'lucide-react';
+import TransactionDetailModal from '@/components/ui/TransactionDetailModal';
+import { TransactionType } from '@prisma/client';
+import EditTransactionModal from '@/components/ui/EditTransactionModal';
 
 // Tipo para la fila de transacción
 type Transaction = {
   id: string;
   createdAt: string;
-  type: 'ENTRADA' | 'SALIDA';
+  type: TransactionType;
   amount: number;
+  price?: number;
   itemName: string;
   user: string;
+  isGrouped?: boolean;
+  transactionKind?: 'edit' | 'sell' | 'load';
 };
 
 export default function HistorialPage() {
@@ -29,6 +42,11 @@ export default function HistorialPage() {
   const pageSize = 10;
   const [types, setTypes] = useState<{ id: string; name: string }[]>([]);
   const [units, setUnits] = useState<{ id: string; name: string }[]>([]);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<
+    string | null
+  >(null);
+  const [isGrouped, setIsGrouped] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -83,21 +101,74 @@ export default function HistorialPage() {
     {
       header: 'Tipo',
       accessorKey: 'type',
-      cell: ({ row }) => (
-        <span
-          className={`px-2 py-1 text-xs font-semibold rounded ${
-            row.original.type === 'ENTRADA'
-              ? 'bg-green-100 text-green-700'
-              : 'bg-red-100 text-red-700'
-          }`}
-        >
-          {row.original.type}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const type = row.original.type;
+        const map = {
+          CARGA_INDIVIDUAL: {
+            icon: <Upload className='w-4 h-4 mr-1' />,
+            label: 'Carga individual',
+            bg: 'bg-green-100 text-green-700',
+          },
+          CARGA_GRUPAL: {
+            icon: <UploadCloud className='w-4 h-4 mr-1' />,
+            label: 'Carga grupal',
+            bg: 'bg-green-100 text-green-700',
+          },
+          VENTA_INDIVIDUAL: {
+            icon: <ShoppingCart className='w-4 h-4 mr-1' />,
+            label: 'Venta individual',
+            bg: 'bg-red-100 text-red-700',
+          },
+          VENTA_GRUPAL: {
+            icon: <ShoppingBag className='w-4 h-4 mr-1' />,
+            label: 'Venta grupal',
+            bg: 'bg-red-100 text-red-700',
+          },
+          EDICION_PRODUCTO: {
+            icon: <Edit3 className='w-4 h-4 mr-1' />,
+            label: 'Edición',
+            bg: 'bg-yellow-100 text-yellow-700',
+          },
+        };
+
+        const { icon, label, bg } = map[type as keyof typeof map] || {
+          icon: null,
+          label: type,
+          bg: 'bg-gray-100 text-gray-700',
+        };
+
+        return (
+          <span
+            className={`flex items-center px-2 py-1 text-xs font-medium rounded ${bg}`}
+          >
+            {icon}
+            {label}
+          </span>
+        );
+      },
     },
     { header: 'Cantidad', accessorKey: 'amount' },
     { header: 'Material', accessorKey: 'itemName' },
     { header: 'Usuario', accessorKey: 'user' },
+    {
+      header: 'Acción',
+      cell: ({ row }) => (
+        <button
+          onClick={() => {
+            if (row.original.type === 'EDICION_PRODUCTO') {
+              setSelectedTransactionId(row.original.id);
+              setEditModalOpen(true);
+            } else {
+              setSelectedTransactionId(row.original.id);
+              setIsGrouped(!!row.original.isGrouped);
+            }
+          }}
+          className='text-blue-600 hover:underline text-sm'
+        >
+          Ver detalle
+        </button>
+      ),
+    },
   ];
 
   return (
@@ -131,6 +202,26 @@ export default function HistorialPage() {
             total,
             onPageChange: setPage,
           }}
+        />
+      )}
+
+      {selectedTransactionId && !editModalOpen && (
+        <TransactionDetailModal
+          open={true}
+          onClose={() => setSelectedTransactionId(null)}
+          transactionId={selectedTransactionId}
+          isGrouped={isGrouped}
+        />
+      )}
+
+      {selectedTransactionId && editModalOpen && (
+        <EditTransactionModal
+          open={true}
+          onClose={() => {
+            setSelectedTransactionId(null);
+            setEditModalOpen(false);
+          }}
+          transactionId={selectedTransactionId}
         />
       )}
     </div>

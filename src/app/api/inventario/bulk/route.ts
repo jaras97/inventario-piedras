@@ -1,6 +1,9 @@
 // src/app/api/inventario/bulk/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { TransactionType } from '@prisma/client';
 
 type ProductCSV = {
   name: string;
@@ -11,6 +14,9 @@ type ProductCSV = {
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id || null;
+
     const raw: ProductCSV[] = await req.json();
 
     const validData = raw.filter(
@@ -18,38 +24,47 @@ export async function POST(req: Request) {
         item.name && item.type && item.unit && !isNaN(Number(item.quantity))
     );
 
+    const transactions = [];
+
     for (const item of validData) {
-        const existing = await prisma.inventoryItem.findFirst({
-            where: {
-              name: item.name,
-              type: { name: item.type },   
-              unit: { name: item.unit },   
-            },
-          });
+      const existing = await prisma.inventoryItem.findFirst({
+        where: {
+          name: item.name,
+          type: { name: item.type },
+          unit: { name: item.unit },
+        },
+      });
 
       if (existing) {
         const quantity = Number(item.quantity);
 
-        if (!isNaN(quantity)) {
-          await prisma.inventoryItem.update({
-            where: { id: existing.id },
-            data: {
-              quantity: {
-                increment: quantity, 
-              },
+        await prisma.inventoryItem.update({
+          where: { id: existing.id },
+          data: {
+            quantity: {
+              increment: quantity,
             },
-          });
-        }
+          },
+        });
 
-        await prisma.inventoryTransaction.create({
-            data: {
-              itemId: existing.id,
-              type: 'ENTRADA',
-              amount: Number(item.quantity), 
-            },
-          });
+        transactions.push({
+          item: { connect: { id: existing.id } },
+          amount: quantity,
+          type: TransactionType.CARGA_GRUPAL,
+          User: userId ? { connect: { id: userId } } : undefined, 
+        });
       }
-  
+    }
+
+    if (transactions.length > 0) {
+      await prisma.inventoryTransactionGroup.create({
+        data: {
+          userId,
+          transactions: {
+            create: transactions,
+          },
+        },
+      });
     }
 
     return NextResponse.json({ success: true });

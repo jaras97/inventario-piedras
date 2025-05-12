@@ -1,33 +1,63 @@
 'use client';
 
-import { useState } from 'react';
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from '@headlessui/react';
+import { Fragment, useMemo, useState } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
+import NumericInput from '@/components/components/NumericInput';
 
-const schema = z.object({
-  amount: z
-    .number({ invalid_type_error: 'Debe ser un número' })
-    .positive('Debe ser mayor a cero'),
-});
+type InventoryItem = {
+  id: string;
+  name: string;
+  typeId: string;
+  unit: {
+    name: string;
+    valueType: 'INTEGER' | 'DECIMAL';
+  };
+};
 
-type LoadForm = z.infer<typeof schema>;
+type LoadForm = {
+  amount: number;
+};
 
 type Props = {
-  itemId: string;
+  item: InventoryItem;
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
 };
 
-export default function LoadModal({ itemId, open, onClose, onSuccess }: Props) {
+export default function LoadModal({ item, open, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
 
+  const schema = useMemo(() => {
+    return z.object({
+      amount:
+        item.unit.valueType === 'INTEGER'
+          ? z
+              .number({ invalid_type_error: 'Debe ser un número' })
+              .int('Debe ser un número entero')
+              .positive('Debe ser mayor a cero')
+          : z
+              .number({ invalid_type_error: 'Debe ser un número' })
+              .positive('Debe ser mayor a cero'),
+    });
+  }, [item.unit.valueType]);
+
   const {
-    register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<LoadForm>({
     resolver: zodResolver(schema),
     defaultValues: { amount: 0 },
@@ -35,7 +65,7 @@ export default function LoadModal({ itemId, open, onClose, onSuccess }: Props) {
 
   const onSubmit = async (data: LoadForm) => {
     setLoading(true);
-    const res = await fetch(`/api/inventario/${itemId}/entrada`, {
+    const res = await fetch(`/api/inventario/${item.id}/entrada`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -50,45 +80,52 @@ export default function LoadModal({ itemId, open, onClose, onSuccess }: Props) {
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div className='fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50'>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className='bg-white rounded p-6 w-full max-w-sm shadow-md'
-      >
-        <h2 className='text-lg font-semibold mb-4'>Cargar inventario</h2>
-
-        <label className='block text-sm mb-1'>Cantidad a cargar</label>
-        <input
-          type='number'
-          step='0.01'
-          {...register('amount', { valueAsNumber: true })}
-          className='w-full border rounded px-3 py-2 mb-2'
-        />
-        {errors.amount && (
-          <p className='text-sm text-red-500 mb-2'>{errors.amount.message}</p>
-        )}
-
-        <div className='flex justify-end gap-2 mt-4'>
-          <button
-            type='button'
-            className='text-sm px-3 py-1 border rounded'
-            onClick={onClose}
-            disabled={loading}
+    <Transition appear show={open} as={Fragment}>
+      <Dialog as='div' className='relative z-50' onClose={onClose}>
+        <div className='fixed inset-0 bg-black/30 backdrop-blur-sm' />
+        <div className='fixed inset-0 flex items-center justify-center p-4'>
+          <TransitionChild
+            as={Fragment}
+            enter='ease-out duration-200'
+            enterFrom='opacity-0 scale-95'
+            enterTo='opacity-100 scale-100'
+            leave='ease-in duration-150'
+            leaveFrom='opacity-100 scale-100'
+            leaveTo='opacity-0 scale-95'
           >
-            Cancelar
-          </button>
-          <button
-            type='submit'
-            className='text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700'
-            disabled={loading}
-          >
-            {loading ? 'Cargando...' : 'Confirmar'}
-          </button>
+            <DialogPanel className='w-full max-w-sm rounded bg-white p-6 shadow-xl'>
+              <DialogTitle className='text-lg font-bold mb-4'>
+                Cargar inventario
+              </DialogTitle>
+
+              <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+                <NumericInput
+                  label='Cantidad a cargar'
+                  value={watch('amount')}
+                  onChange={(val) => setValue('amount', val)}
+                  error={errors.amount?.message}
+                  allowDecimal={item.unit.valueType === 'DECIMAL'}
+                />
+
+                <div className='flex justify-end gap-2 pt-4'>
+                  <Button
+                    variant='outline'
+                    type='button'
+                    onClick={onClose}
+                    disabled={loading}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type='submit' disabled={loading}>
+                    {loading ? 'Cargando...' : 'Confirmar'}
+                  </Button>
+                </div>
+              </form>
+            </DialogPanel>
+          </TransitionChild>
         </div>
-      </form>
-    </div>
+      </Dialog>
+    </Transition>
   );
 }

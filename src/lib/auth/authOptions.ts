@@ -5,6 +5,8 @@ import { compare } from "bcryptjs"
 import type { NextAuthOptions, SessionStrategy } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 
+
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -61,6 +63,7 @@ export const authOptions: NextAuthOptions = {
       async session({ session, token }) {
         session.user.id = token.sub as string
         session.user.isAuthorized = token.isAuthorized as boolean
+        session.user.role = token.role as string;
         return session
       },
       async jwt({ token }) {
@@ -72,6 +75,7 @@ export const authOptions: NextAuthOptions = {
       
         if (dbUser) {
           token.isAuthorized = dbUser.isAuthorized
+          token.role = dbUser.role;
         }
       
         return token

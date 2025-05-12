@@ -1,84 +1,119 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding...');
+  // Crear roles implícitamente (usando enum Role de Prisma)
 
-  // Crear tipos
-  await prisma.inventoryType.createMany({
-    data: [
-      { name: 'oro' },
-      { name: 'esmeralda' },
-      { name: 'diamante' },
-    ],
-    skipDuplicates: true,
+  // Usuarios
+  const adminPassword = await bcrypt.hash('admin123', 10);
+  const auditorPassword = await bcrypt.hash('auditor123', 10);
+
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@test.com' },
+    update: {},
+    create: {
+      email: 'admin@test.com',
+      name: 'Admin',
+      password: adminPassword,
+      role: 'ADMIN',
+      isAuthorized: true,
+    },
   });
 
-  // Crear unidades
-  await prisma.inventoryUnit.createMany({
-    data: [
-      { name: 'gramos' },
-      { name: 'kilates' },
-      { name: 'unidad' },
-    ],
-    skipDuplicates: true,
+  await prisma.user.upsert({
+    where: { email: 'auditor@test.com' },
+    update: {},
+    create: {
+      email: 'auditor@test.com',
+      name: 'Auditor',
+      password: auditorPassword,
+      role: 'AUDITOR',
+      isAuthorized: true,
+    },
   });
 
-  // Obtener IDs actualizados desde base de datos
-  const [oro, esmeralda, diamante] = await prisma.inventoryType.findMany();
-  const [gramos, kilates, unidad] = await prisma.inventoryUnit.findMany();
-
-  // Crear usuarios
-  await prisma.user.createMany({
-    data: [
-      {
-        email: 'admin@piedras.com',
-        name: 'Administrador',
-        isAuthorized: true,
-        role: 'ADMIN',
-      },
-      {
-        email: 'auditor@piedras.com',
-        name: 'Auditor de pruebas',
-        isAuthorized: false,
-        role: 'AUDITOR',
-      },
-    ],
-    skipDuplicates: true,
+  // Tipos
+  const emerald = await prisma.inventoryType.upsert({
+    where: { name: 'Esmeralda' },
+    update: {},
+    create: { name: 'Esmeralda' },
   });
 
-  // Crear inventario con relaciones correctas
-  await prisma.inventoryItem.createMany({
-    data: [
-      {
-        name: 'Esmeralda colombiana',
-        typeId: esmeralda.id,
-        unitId: kilates.id,
-        quantity: 125.5,
-      },
-      {
-        name: 'Lingote de oro 24k',
-        typeId: oro.id,
-        unitId: gramos.id,
-        quantity: 380,
-      },
-      {
-        name: 'Diamante pulido',
-        typeId: diamante.id,
-        unitId: unidad.id,
-        quantity: 10,
-      },
-    ],
+  await prisma.inventoryType.upsert({
+    where: { name: 'Oro' },
+    update: {},
+    create: { name: 'Oro' },
   });
 
-  console.log('✅ Seed completed.');
+  // Unidades
+  const kilate = await prisma.inventoryUnit.upsert({
+    where: { name: 'Kilate' },
+    update: {},
+    create: { name: 'Kilate' },
+  });
+
+  const unidad = await prisma.inventoryUnit.upsert({
+    where: { name: 'Unidad' },
+    update: {},
+    create: { name: 'Unidad' },
+  });
+
+  // Productos
+  const product1 = await prisma.inventoryItem.create({
+    data: {
+      name: 'Esmeralda fina pequeña',
+      typeId: emerald.id,
+      unitId: kilate.id,
+      quantity: 10,
+      price: 500, // por kilate
+    },
+  });
+
+  const product2 = await prisma.inventoryItem.create({
+    data: {
+      name: 'Esmeralda fina grande',
+      typeId: emerald.id,
+      unitId: unidad.id,
+      quantity: 3,
+      price: 1500, // por unidad
+    },
+  });
+
+  // Grupo de transacciones (ej. cargue grupal)
+   await prisma.inventoryTransactionGroup.create({
+    data: {
+      userId: admin.id,
+      transactions: {
+        create: [
+          {
+            itemId: product1.id,
+            amount: 5,
+            type: 'CARGA_INDIVIDUAL',
+            price: 500,
+            userId: admin.id,
+          },
+          {
+            itemId: product2.id,
+            amount: 2,
+            type: 'CARGA_INDIVIDUAL',
+            price: 1500,
+            userId: admin.id,
+          },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ Datos de prueba generados correctamente.');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error in seed:', e);
+    console.error('❌ Error generando datos de prueba:', e);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
+  .finally(() => {
+    prisma.$disconnect();
   });

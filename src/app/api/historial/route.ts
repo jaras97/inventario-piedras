@@ -20,7 +20,6 @@ export async function GET(req: NextRequest) {
       ? parseFloat(searchParams.get('quantity')!)
       : undefined;
 
-    // Filtros relacionados con el item
     const itemFilters: Prisma.InventoryItemWhereInput = {};
     if (name) {
       itemFilters.name = { contains: name, mode: 'insensitive' };
@@ -71,37 +70,74 @@ export async function GET(req: NextRequest) {
       }),
     };
 
-    const [transactions, total] = await Promise.all([
-      prisma.inventoryTransaction.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
+    const [groups, individualTransactions] = await Promise.all([
+      prisma.inventoryTransactionGroup.findMany({
+        where: {
+          transactions: {
+            some: where,
+          },
+        },
         include: {
-          item: {
+          user: true,
+          transactions: {
             include: {
-              type: true,
-              unit: true,
+              item: true,
             },
           },
+        },
+      }),
+      prisma.inventoryTransaction.findMany({
+        where: {
+          ...where,
+          groupId: null,
+        },
+        include: {
+          item: true,
           User: true,
         },
       }),
-      prisma.inventoryTransaction.count({ where }),
     ]);
 
-    const result = transactions.map((t) => ({
-      id: t.id,
-      createdAt: t.createdAt,
-      amount: t.amount,
-      type: t.type,
-      itemName: t.item.name,
-      user: t.User?.name || 'Sistema',
-    }));
+    const groupResults = groups.map((group) => {
+      const first = group.transactions[0];
+      return {
+        id: group.id,
+        createdAt: group.createdAt,
+        amount: group.transactions.reduce((sum, t) => sum + t.amount, 0),
+        type: first.type,
+        itemName: `${group.transactions.length} productos`,
+        user: group.user?.name || 'Sistema',
+        isGrouped: true,
+      };
+    });
+
+const individualResults = individualTransactions.map((t) => ({
+  id: t.id,
+  createdAt: t.createdAt,
+  amount: t.amount,
+  type: t.type,
+  price: t.price,
+  itemName:
+    t.type === 'EDICION_PRODUCTO' ? `${t.item.name} (editado)` : t.item.name,
+  user: t.User?.name || 'Sistema',
+  isGrouped: false,
+  transactionKind:
+    t.type === 'EDICION_PRODUCTO'
+      ? 'edit'
+      : t.type.includes('VENTA')
+      ? 'sell'
+      : 'load',
+}));
+
+    const all = [...groupResults, ...individualResults].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    const paginated = all.slice(skip, skip + limit);
 
     return NextResponse.json({
-      data: result,
-      total,
+      data: paginated,
+      total: all.length,
       page,
       pageSize: limit,
     });

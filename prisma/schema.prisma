@@ -7,9 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ───────────────────────────
+// ───────────────────────────────
 // 🧑‍💼 Autenticación y Usuarios
-// ───────────────────────────
+// ───────────────────────────────
 
 model User {
   id            String    @id @default(cuid())
@@ -17,17 +17,17 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   password      String?
-  role          String    @default("user")
+  role          Role      @default(USER)
   isAuthorized  Boolean   @default(false)
   image         String?
 
-  accounts Account[]
-  sessions Session[]
+  accounts     Account[]
+  sessions     Session[]
+  transactions InventoryTransaction[]
+  groups       InventoryTransactionGroup[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  transactions InventoryTransaction[]
 }
 
 model Account {
@@ -64,9 +64,9 @@ enum Role {
   AUDITOR
 }
 
-// ───────────────────────────
-// 💎 Inventario de piedras
-// ───────────────────────────
+// ───────────────────────────────
+// 💎 Inventario de piedras preciosas
+// ───────────────────────────────
 
 model InventoryType {
   id    String          @id @default(cuid())
@@ -75,9 +75,15 @@ model InventoryType {
 }
 
 model InventoryUnit {
-  id    String          @id @default(cuid())
-  name  String          @unique
-  items InventoryItem[]
+  id        String          @id @default(cuid())
+  name      String          @unique
+  valueType ValueType       @default(DECIMAL)
+  items     InventoryItem[]
+}
+
+enum ValueType {
+  INTEGER
+  DECIMAL
 }
 
 model InventoryItem {
@@ -88,25 +94,41 @@ model InventoryItem {
   type      InventoryType @relation(fields: [typeId], references: [id])
   unit      InventoryUnit @relation(fields: [unitId], references: [id])
   quantity  Float         @default(0)
+  price     Float         @default(0)
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  // Historial de movimientos
   transactions InventoryTransaction[]
+
+  @@unique([name, typeId, unitId])
 }
 
 model InventoryTransaction {
-  id        String          @id @default(cuid())
-  item      InventoryItem   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  id        String                     @id @default(cuid())
   itemId    String
+  item      InventoryItem              @relation(fields: [itemId], references: [id], onDelete: Cascade)
   type      TransactionType
   amount    Float
-  createdAt DateTime        @default(now())
-  User      User?           @relation(fields: [userId], references: [id])
+  price     Float                      @default(0) // solo en ventas
+  groupId   String?
+  group     InventoryTransactionGroup? @relation(fields: [groupId], references: [id])
   userId    String?
+  User      User?                      @relation(fields: [userId], references: [id])
+  createdAt DateTime                   @default(now())
+}
+
+model InventoryTransactionGroup {
+  id           String                 @id @default(cuid())
+  createdAt    DateTime               @default(now())
+  userId       String?
+  user         User?                  @relation(fields: [userId], references: [id])
+  transactions InventoryTransaction[]
 }
 
 enum TransactionType {
-  ENTRADA
-  SALIDA
+  CARGA_INDIVIDUAL
+  CARGA_GRUPAL
+  VENTA_INDIVIDUAL
+  VENTA_GRUPAL
+  EDICION_PRODUCTO
 }

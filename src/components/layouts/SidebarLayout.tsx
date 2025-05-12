@@ -43,6 +43,15 @@ export default function SidebarLayout() {
             <SidebarLink href='/historial' currentPath={pathname}>
               Historial
             </SidebarLink>
+            <SidebarLink href='/reportes' currentPath={pathname}>
+              Reportes
+            </SidebarLink>
+            <SidebarLink href='/usuarios' currentPath={pathname}>
+              Usuarios
+            </SidebarLink>
+            <SidebarLink href='/unidades' currentPath={pathname}>
+              Unidades
+            </SidebarLink>
           </nav>
         </div>
 

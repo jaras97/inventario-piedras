@@ -5,9 +5,9 @@ import { authOptions } from '@/lib/auth/authOptions';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, typeId, unitId, quantity } = await req.json();
+    const { name, typeId, unitId, quantity, price } = await req.json();
 
-    if (!name || !typeId || !unitId || quantity === undefined) {
+    if (!name || !typeId || !unitId || quantity === undefined || price === undefined) {
       return NextResponse.json(
         { error: 'Faltan datos requeridos' },
         { status: 400 }
@@ -34,17 +34,19 @@ export async function POST(req: NextRequest) {
         typeId,
         unitId,
         quantity,
+        price,
       },
     });
 
-    // Si la cantidad es mayor que 0, registrar transacción
+    // Si la cantidad es mayor que 0, registrar transacción de entrada
     if (quantity > 0) {
       const session = await getServerSession(authOptions);
       await prisma.inventoryTransaction.create({
         data: {
           itemId: newItem.id,
-          type: 'ENTRADA',
+          type: 'CARGA_INDIVIDUAL',
           amount: quantity,
+          price,
           userId: session?.user?.id || null,
         },
       });

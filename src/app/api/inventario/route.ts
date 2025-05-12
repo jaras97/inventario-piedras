@@ -67,13 +67,19 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json({
-      data: items.map((item) => ({
-        id: item.id,
-        name: item.name,
-        type: item.type?.name ?? '',
-        unit: item.unit?.name ?? '',
-        quantity: item.quantity,
-      })),
+data: items.map((item) => ({
+  id: item.id,
+  name: item.name,
+  typeId: item.typeId, 
+  type: { name: item.type?.name ?? '' },
+    unit: {
+    id: item.unit?.id ?? '',
+    name: item.unit?.name ?? '',
+    valueType: item.unit?.valueType ?? 'DECIMAL',
+  },
+  quantity: item.quantity,
+  price: item.price,
+})),
       total,
       page,
       pageSize: limit,

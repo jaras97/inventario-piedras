@@ -1,4 +1,3 @@
-// src/types/next-auth.d.ts
 import { DefaultSession } from "next-auth"
 
 declare module "next-auth" {
@@ -9,6 +8,12 @@ declare module "next-auth" {
       isAuthorized: boolean
     } & DefaultSession["user"]
   }
+}
 
-
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string
+    role?: string
+    isAuthorized: boolean
+  }
 }
