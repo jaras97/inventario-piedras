@@ -30,7 +30,7 @@ export async function GET() {
 // POST: Crear usuario
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, role } = await req.json();
+    const { name, email, password, role,isAuthorized } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
         email,
         password: hashedPassword,
         role,
-        isAuthorized: true,
+        isAuthorized: !!isAuthorized,
       },
     });
 

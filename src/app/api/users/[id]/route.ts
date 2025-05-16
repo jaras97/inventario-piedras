@@ -4,18 +4,28 @@ import prisma from '@/lib/db/prisma';
 import { hash } from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 
-// PUT: Actualizar usuario por ID
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+// Helper para obtener params desde pathname
+function getUserIdFromUrl(req: NextRequest): string | null {
+  const url = new URL(req.url);
+  const match = url.pathname.match(/\/api\/users\/([^/]+)/);
+  return match?.[1] || null;
+}
+
+export async function PUT(req: NextRequest) {
   try {
-    const { id } = params;
+    const id = getUserIdFromUrl(req);
+    if (!id) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
     const { name, email, password, role, isAuthorized } = await req.json();
 
-const updateData: Prisma.UserUpdateInput = {
-  name,
-  email,
-  role,
-  isAuthorized,
-};
+    const updateData: Prisma.UserUpdateInput = {
+      name,
+      email,
+      role,
+      isAuthorized,
+    };
 
     if (password) {
       updateData.password = await hash(password, 10);
@@ -36,10 +46,12 @@ const updateData: Prisma.UserUpdateInput = {
   }
 }
 
-// DELETE: Eliminar usuario por ID
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest) {
   try {
-    const { id } = params;
+    const id = getUserIdFromUrl(req);
+    if (!id) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
 
     await prisma.user.delete({
       where: { id },

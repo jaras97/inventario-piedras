@@ -13,16 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import NumericInput from '@/components/components/NumericInput';
-
-type InventoryItem = {
-  id: string;
-  name: string;
-  typeId: string;
-  unit: {
-    name: string;
-    valueType: 'INTEGER' | 'DECIMAL';
-  };
-};
+import { InventoryItem } from '@/types/inventory';
 
 type LoadForm = {
   amount: number;
@@ -44,7 +35,7 @@ export default function LoadModal({ item, open, onClose, onSuccess }: Props) {
         item.unit.valueType === 'INTEGER'
           ? z
               .number({ invalid_type_error: 'Debe ser un número' })
-              .int('Debe ser un número entero')
+              .int()
               .positive('Debe ser mayor a cero')
           : z
               .number({ invalid_type_error: 'Debe ser un número' })
@@ -68,6 +59,7 @@ export default function LoadModal({ item, open, onClose, onSuccess }: Props) {
     const res = await fetch(`/api/inventario/${item.id}/entrada`, {
       method: 'POST',
       body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
     });
 
     setLoading(false);
@@ -101,7 +93,7 @@ export default function LoadModal({ item, open, onClose, onSuccess }: Props) {
 
               <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
                 <NumericInput
-                  label='Cantidad a cargar'
+                  label={`Cantidad a cargar (${item.unit.name})`}
                   value={watch('amount')}
                   onChange={(val) => setValue('amount', val)}
                   error={errors.amount?.message}

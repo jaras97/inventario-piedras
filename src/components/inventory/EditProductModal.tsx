@@ -25,7 +25,7 @@ interface Props {
   product: {
     id: string;
     name: string;
-    typeId: string;
+    categoryId: string;
     price: number;
   } | null;
   types: { id: string; name: string }[];
@@ -40,42 +40,42 @@ export default function EditProductModal({
 }: Props) {
   const [form, setForm] = useState<{
     name: string;
-    type: SelectOption | null;
+    category: SelectOption | null;
     price: number;
   }>({
     name: '',
-    type: null,
+    category: null,
     price: 0,
   });
 
   const [loading, setLoading] = useState(false);
 
-  const typeOptions = useMemo(
+  const categoryOptions = useMemo(
     () => types.map((t) => ({ label: t.name, value: t.id })),
     [types],
   );
 
   useEffect(() => {
     if (!open || !product) return;
-    const selectedType =
-      typeOptions.find((opt) => opt.value === product.typeId) || null;
+    const selectedCategory =
+      categoryOptions.find((opt) => opt.value === product.categoryId) || null;
 
     setForm({
       name: product.name,
-      type: selectedType,
+      category: selectedCategory,
       price: product.price,
     });
-  }, [open, product, typeOptions]);
+  }, [open, product, categoryOptions]);
 
   const handleSubmit = async () => {
-    if (!product || !form.type) return;
+    if (!product || !form.category) return;
     setLoading(true);
     const res = await fetch(`/api/inventario/${product.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: form.name,
-        typeId: form.type.value,
+        categoryId: form.category.value,
         price: form.price,
       }),
     });
@@ -117,10 +117,10 @@ export default function EditProductModal({
                 />
 
                 <Select
-                  label='Tipo'
-                  options={typeOptions}
-                  value={form.type}
-                  onChange={(opt) => setForm({ ...form, type: opt })}
+                  label='Categoría'
+                  options={categoryOptions}
+                  value={form.category}
+                  onChange={(opt) => setForm({ ...form, category: opt })}
                 />
 
                 <NumericInput

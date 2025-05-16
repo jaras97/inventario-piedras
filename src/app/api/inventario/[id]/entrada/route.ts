@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/db/prisma'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth/authOptions'
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/authOptions';
+import { ROLES } from '@/lib/auth/roles';
 
 export async function POST(
   req: NextRequest,
@@ -15,6 +16,12 @@ export async function POST(
       return NextResponse.json({ error: 'Cantidad inválida' }, { status: 400 });
     }
 
+    const session = await getServerSession(authOptions);
+
+    if (session?.user?.role === ROLES.AUDITOR || session?.user?.role === ROLES.USER ) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
     const item = await prisma.inventoryItem.findUnique({
       where: { id },
     });
@@ -23,14 +30,13 @@ export async function POST(
       return NextResponse.json({ error: 'Item no encontrado' }, { status: 404 });
     }
 
-    const session = await getServerSession(authOptions);
-
     await prisma.inventoryTransaction.create({
       data: {
         itemId: id,
         type: 'CARGA_INDIVIDUAL',
         amount,
-        userId: session?.user?.id || null, // ✅ usa safe access
+        price: item.price,
+        userId: session?.user?.id || null,
       },
     });
 

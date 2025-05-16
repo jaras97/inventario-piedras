@@ -7,10 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ───────────────────────────────
+//
+// ──────────────────────────────────────────────
 // 🧑‍💼 Autenticación y Usuarios
-// ───────────────────────────────
-
+// ──────────────────────────────────────────────
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -64,14 +64,27 @@ enum Role {
   AUDITOR
 }
 
-// ───────────────────────────────
+//
+// ──────────────────────────────────────────────
 // 💎 Inventario de piedras preciosas
-// ───────────────────────────────
+// ──────────────────────────────────────────────
 
-model InventoryType {
-  id    String          @id @default(cuid())
-  name  String          @unique
+model InventoryCategory {
+  id    String                     @id @default(cuid())
+  name  String                     @unique
   items InventoryItem[]
+  codes InventorySubcategoryCode[]
+}
+
+model InventorySubcategoryCode {
+  id         String            @id @default(cuid())
+  code       String
+  categoryId String
+  category   InventoryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  items InventoryItem[] @relation("SubcategoryCodeToItems")
+
+  @@unique([code, categoryId])
 }
 
 model InventoryUnit {
@@ -87,20 +100,24 @@ enum ValueType {
 }
 
 model InventoryItem {
-  id        String        @id @default(cuid())
-  name      String
-  typeId    String
-  unitId    String
-  type      InventoryType @relation(fields: [typeId], references: [id])
-  unit      InventoryUnit @relation(fields: [unitId], references: [id])
-  quantity  Float         @default(0)
-  price     Float         @default(0)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id                String  @id @default(cuid())
+  name              String
+  categoryId        String
+  unitId            String
+  subcategoryCodeId String?
+
+  category        InventoryCategory         @relation(fields: [categoryId], references: [id])
+  unit            InventoryUnit             @relation(fields: [unitId], references: [id])
+  subcategoryCode InventorySubcategoryCode? @relation("SubcategoryCodeToItems", fields: [subcategoryCodeId], references: [id])
+
+  quantity  Float    @default(0)
+  price     Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   transactions InventoryTransaction[]
 
-  @@unique([name, typeId, unitId])
+  @@unique([name, categoryId, unitId])
 }
 
 model InventoryTransaction {

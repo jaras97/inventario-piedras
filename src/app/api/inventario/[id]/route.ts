@@ -1,7 +1,9 @@
+// src/app/api/inventario/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
+import { hasWriteAccess } from '@/lib/auth/roles';
 
 export async function PUT(
   req: NextRequest,
@@ -9,42 +11,38 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const userEmail = session?.user?.email ?? 'sistema';
+    const user = session?.user;
 
-     const { id } = await context.params;
-    const { name, typeId, price } = await req.json();
-
-    if (!name || !typeId || price == null) {
-      return NextResponse.json(
-        { error: 'Datos incompletos para actualizar producto' },
-        { status: 400 }
-      );
+    if (!user || !hasWriteAccess(user.role)) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
-    // Actualizar producto
-    const updated = await prisma.inventoryItem.update({
-      where: { id },
-      data: {
-        name,
-        typeId,
-        price,
-      },
-    });
+    const { id } = await context.params;
+const { name, categoryId, price } = await req.json();
 
-    // Obtener ID del usuario (si está logueado)
-    const user = await prisma.user.findUnique({
-      where: { email: userEmail },
-      select: { id: true },
-    });
+if (!name || !categoryId || price === null || price === undefined) {
+  return NextResponse.json(
+    { error: 'Datos incompletos para actualizar producto' },
+    { status: 400 }
+  );
+}
 
-    // Registrar transacción tipo EDICION_PRODUCTO
+const updated = await prisma.inventoryItem.update({
+  where: { id },
+  data: {
+    name,
+    categoryId, // <- usa categoryId directamente
+    price,
+  },
+});
+
     await prisma.inventoryTransaction.create({
       data: {
         itemId: id,
         type: 'EDICION_PRODUCTO',
         amount: 0,
         price,
-        userId: user?.id ?? null,
+        userId: user.id,
       },
     });
 

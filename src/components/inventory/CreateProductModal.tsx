@@ -17,14 +17,16 @@ import NumericInput from '@/components/components/NumericInput';
 
 type Option = {
   id: string;
-  name: string;
+  name?: string;
+  code?: string;
   valueType?: 'INTEGER' | 'DECIMAL';
 };
 
 type FormData = {
   name: string;
-  typeId: string;
+  categoryId: string;
   unitId: string;
+  subcategoryCodeId?: string;
   quantity: number;
   price: number;
 };
@@ -40,31 +42,31 @@ export default function CreateProductModal({
   onClose,
   onSuccess,
 }: Props) {
-  const [types, setTypes] = useState<Option[]>([]);
+  const [categories, setCategories] = useState<Option[]>([]);
   const [units, setUnits] = useState<Option[]>([]);
+  const [codes, setCodes] = useState<Option[]>([]);
   const [unitType, setUnitType] = useState<'INTEGER' | 'DECIMAL'>('DECIMAL');
   const [loading, setLoading] = useState(false);
 
   const schema = useMemo(() => {
-    const base = {
+    return z.object({
       name: z.string().min(1, 'El nombre es obligatorio'),
-      typeId: z.string().min(1, 'Seleccione un tipo'),
+      categoryId: z.string().min(1, 'Seleccione una categoría'),
       unitId: z.string().min(1, 'Seleccione una unidad'),
+      subcategoryCodeId: z.string().optional(),
       quantity:
         unitType === 'INTEGER'
           ? z
               .number({ invalid_type_error: 'Debe ser un número' })
-              .int('Debe ser un número entero')
-              .nonnegative('No puede ser negativo')
+              .int()
+              .nonnegative()
           : z
               .number({ invalid_type_error: 'Debe ser un número' })
-              .nonnegative('No puede ser negativo'),
+              .nonnegative(),
       price: z
         .number({ invalid_type_error: 'Debe ser un número' })
-        .nonnegative('No puede ser negativo'),
-    };
-
-    return z.object(base);
+        .nonnegative(),
+    });
   }, [unitType]);
 
   const {
@@ -78,44 +80,47 @@ export default function CreateProductModal({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
-      typeId: '',
+      categoryId: '',
       unitId: '',
+      subcategoryCodeId: '',
       quantity: 0,
       price: 0,
     },
   });
 
   const name = watch('name');
-  const typeId = watch('typeId');
+  const categoryId = watch('categoryId');
   const unitId = watch('unitId');
 
-  const disableInputs = !name || !typeId || !unitId;
+  const disableInputs = !name || !categoryId || !unitId;
 
   useEffect(() => {
     if (!open) return;
-
     const fetchMetadata = async () => {
       const res = await fetch('/api/inventario/metadata');
       const json = await res.json();
-      setTypes(json.types || []);
+      setCategories(json.categories || []);
       setUnits(json.units || []);
     };
-
     fetchMetadata();
   }, [open]);
 
   useEffect(() => {
     const selected = units.find((u) => u.id === unitId);
-    if (selected?.valueType === 'INTEGER') setUnitType('INTEGER');
-    else setUnitType('DECIMAL');
+    setUnitType(selected?.valueType === 'INTEGER' ? 'INTEGER' : 'DECIMAL');
     setValue('quantity', 0);
     setValue('price', 0);
   }, [unitId, units, setValue]);
 
   useEffect(() => {
-    setValue('quantity', 0);
-    setValue('price', 0);
-  }, [name, typeId, setValue]);
+    const fetchCodes = async () => {
+      if (!categoryId) return;
+      const res = await fetch(`/api/codigos?categoryId=${categoryId}`);
+      const json = await res.json();
+      setCodes(json || []);
+    };
+    fetchCodes();
+  }, [categoryId]);
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -156,30 +161,51 @@ export default function CreateProductModal({
               <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
                 <LabeledInput
                   label='Nombre del producto'
-                  placeholder='Esmeralda'
+                  placeholder='Ej: Esmeralda'
                   {...register('name')}
                   error={errors.name?.message}
                 />
 
                 <div>
-                  <label className='block text-sm font-medium mb-1'>Tipo</label>
+                  <label className='block text-sm font-medium mb-1'>
+                    Categoría
+                  </label>
                   <select
                     className='w-full border rounded px-3 py-2 text-sm'
-                    {...register('typeId')}
+                    {...register('categoryId')}
                   >
-                    <option value=''>Seleccione tipo</option>
-                    {types.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
+                    <option value=''>Seleccione categoría</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
                       </option>
                     ))}
                   </select>
-                  {errors.typeId && (
+                  {errors.categoryId && (
                     <p className='text-sm text-red-500 mt-1'>
-                      {errors.typeId.message}
+                      {errors.categoryId.message}
                     </p>
                   )}
                 </div>
+
+                {codes.length > 0 && (
+                  <div>
+                    <label className='block text-sm font-medium mb-1'>
+                      Código
+                    </label>
+                    <select
+                      className='w-full border rounded px-3 py-2 text-sm'
+                      {...register('subcategoryCodeId')}
+                    >
+                      <option value=''>Sin código</option>
+                      {codes.map((code) => (
+                        <option key={code.id} value={code.id}>
+                          {code.name || code.code}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className='block text-sm font-medium mb-1'>

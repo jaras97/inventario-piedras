@@ -4,22 +4,25 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 
 export default function SidebarLayout() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const role = session?.user?.role ?? '';
+
+  const showHistorial = role === 'ADMIN' || role === 'AUDITOR';
+  const showReportes = role === 'ADMIN' || role === 'AUDITOR';
+  const showUsuarios = role === 'ADMIN';
+  const showUnidades = role === 'ADMIN';
 
   return (
     <>
-      {/* Overlay al abrir el sidebar en mobile */}
+      {/* Overlay */}
       {open && (
         <div
-          className={`fixed inset-0 bg-[rgba(0,0,0,0.08)] z-40 transition-opacity duration-300 lg:hidden ${
-            open
-              ? 'opacity-100 pointer-events-auto'
-              : 'opacity-0 pointer-events-none'
-          }`}
+          className={`fixed inset-0 bg-[rgba(0,0,0,0.08)] z-40 transition-opacity duration-300 lg:hidden`}
           onClick={() => setOpen(false)}
         />
       )}
@@ -27,9 +30,9 @@ export default function SidebarLayout() {
       {/* Sidebar */}
       <aside
         className={`bg-gray-50 text-gray-800 w-64 flex flex-col justify-between p-6 shadow-md z-50
-  fixed inset-y-0 left-0 transform transition-transform duration-300 ease-in-out
-  ${open ? 'translate-x-0' : '-translate-x-full'} 
-  lg:translate-x-0 lg:relative lg:inset-auto lg:h-screen`}
+        fixed inset-y-0 left-0 transform transition-transform duration-300 ease-in-out
+        ${open ? 'translate-x-0' : '-translate-x-full'} 
+        lg:translate-x-0 lg:relative lg:inset-auto lg:h-screen`}
       >
         <div>
           <h2 className='text-2xl font-bold mb-8 text-blue-600'>Inventario</h2>
@@ -40,17 +43,28 @@ export default function SidebarLayout() {
             <SidebarLink href='/inventario' currentPath={pathname}>
               Inventario
             </SidebarLink>
-            <SidebarLink href='/historial' currentPath={pathname}>
-              Historial
-            </SidebarLink>
-            <SidebarLink href='/reportes' currentPath={pathname}>
-              Reportes
-            </SidebarLink>
-            <SidebarLink href='/usuarios' currentPath={pathname}>
-              Usuarios
-            </SidebarLink>
-            <SidebarLink href='/unidades' currentPath={pathname}>
-              Unidades
+            {showHistorial && (
+              <SidebarLink href='/historial' currentPath={pathname}>
+                Historial
+              </SidebarLink>
+            )}
+            {showReportes && (
+              <SidebarLink href='/reportes' currentPath={pathname}>
+                Reportes
+              </SidebarLink>
+            )}
+            {showUsuarios && (
+              <SidebarLink href='/usuarios' currentPath={pathname}>
+                Usuarios
+              </SidebarLink>
+            )}
+            {showUnidades && (
+              <SidebarLink href='/unidades' currentPath={pathname}>
+                Unidades
+              </SidebarLink>
+            )}
+            <SidebarLink href='/categorias' currentPath={pathname}>
+              Categorias
             </SidebarLink>
           </nav>
         </div>
@@ -71,8 +85,7 @@ export default function SidebarLayout() {
         </button>
       </aside>
 
-      {/* Botón toggle hamburguesa */}
-
+      {/* Botón hamburguesa */}
       <button
         onClick={() => setOpen(true)}
         className={`lg:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-full shadow-md transition-all duration-300 ease-in-out transform ${

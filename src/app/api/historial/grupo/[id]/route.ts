@@ -17,8 +17,9 @@ export async function GET(
           include: {
             item: {
               include: {
-                type: true,
+                category: true,           
                 unit: true,
+                subcategoryCode: true,    
               },
             },
           },
@@ -36,8 +37,9 @@ export async function GET(
 
     const productos = group.transactions.map((t) => ({
       name: t.item.name,
-      type: t.item.type.name,
+      type: t.item.category.name, 
       unit: t.item.unit.name,
+      code: t.item.subcategoryCode?.code ?? undefined,
       quantity: t.amount,
       price: t.price ?? undefined,
       total: t.price ? t.amount * t.price : undefined,
@@ -51,8 +53,7 @@ export async function GET(
         user: group.user?.name || 'Sistema',
         productos,
         totalGeneral,
-        type: group.transactions[0].type
-      
+        type: group.transactions[0]?.type ?? 'DESCONOCIDO',
       },
     });
   } catch (error) {

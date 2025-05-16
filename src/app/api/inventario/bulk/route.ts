@@ -1,28 +1,48 @@
-// src/app/api/inventario/bulk/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { TransactionType } from '@prisma/client';
+import { hasWriteAccess } from '@/lib/auth/roles';
 
 type ProductCSV = {
   name: string;
-  type: string;
+  category: string;
   unit: string;
   quantity: number;
 };
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id || null;
+    const role = session?.user?.role || '';
+
+    if (!hasWriteAccess(role)) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 403 }
+      );
+    }
 
     const raw: ProductCSV[] = await req.json();
 
+    // Validar formato de entrada
     const validData = raw.filter(
       (item) =>
-        item.name && item.type && item.unit && !isNaN(Number(item.quantity))
+        item.name &&
+        item.category &&
+        item.unit &&
+        !isNaN(Number(item.quantity)) &&
+        Number(item.quantity) > 0
     );
+
+    if (validData.length === 0) {
+      return NextResponse.json(
+        { error: 'No hay productos válidos para cargar' },
+        { status: 400 }
+      );
+    }
 
     const transactions = [];
 
@@ -30,7 +50,7 @@ export async function POST(req: Request) {
       const existing = await prisma.inventoryItem.findFirst({
         where: {
           name: item.name,
-          type: { name: item.type },
+          category: { name: item.category },
           unit: { name: item.unit },
         },
       });
@@ -47,12 +67,12 @@ export async function POST(req: Request) {
           },
         });
 
-        transactions.push({
-          item: { connect: { id: existing.id } },
-          amount: quantity,
-          type: TransactionType.CARGA_GRUPAL,
-          User: userId ? { connect: { id: userId } } : undefined, 
-        });
+      transactions.push({
+  itemId: existing.id,
+  amount: quantity,
+  type: TransactionType.CARGA_GRUPAL,
+  userId: userId ?? null,
+});
       }
     }
 
@@ -69,7 +89,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error en cargue grupal:', error);
-    return NextResponse.json({ error: 'Error en el cargue grupal' }, { status: 500 });
+    console.error('❌ Error en cargue grupal:', error);
+    return NextResponse.json(
+      { error: 'Error en el cargue grupal' },
+      { status: 500 }
+    );
   }
 }

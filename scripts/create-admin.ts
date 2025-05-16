@@ -1,5 +1,5 @@
 // scripts/create-user.ts
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Role } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -8,7 +8,7 @@ async function main() {
   const email = 'usuario@gmail.com'
   const password = 'admin123' // solo se usará si usa login con contraseña
   const name = 'Administrador'
-  const role = 'admin'
+ const role: Role = Role.ADMIN;
   const isAuthorized = true
 
   const existingUser = await prisma.user.findUnique({

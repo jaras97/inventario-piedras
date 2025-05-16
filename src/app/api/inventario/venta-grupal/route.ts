@@ -1,5 +1,4 @@
 // app/api/inventario/venta-grupal/route.ts
-
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
@@ -8,10 +7,10 @@ import { hasWriteAccess } from '@/lib/auth/roles';
 import { TransactionType } from '@prisma/client';
 
 type GroupSellItem = {
-    itemId: string;
-    amount: number;
-    price: number;
-  };
+  itemId: string;
+  amount: number;
+  price: number;
+};
 
 export async function POST(req: Request) {
   try {
@@ -26,42 +25,43 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'No hay productos' }, { status: 400 });
     }
 
+    const userId = session.user.id;
+
     const group = await prisma.inventoryTransactionGroup.create({
-        data: {
-          user: { connect: { id: session.user.id } },
-          transactions: {
-            create: await Promise.all(
-                items.map(async (item: GroupSellItem) => {
-                const inventoryItem = await prisma.inventoryItem.findUnique({
-                  where: { id: item.itemId },
-                });
-      
-                if (!inventoryItem || inventoryItem.quantity < item.amount) {
-                  throw new Error(`Producto insuficiente o inexistente: ${item.itemId}`);
-                }
-      
-                // Actualizar inventario
-                await prisma.inventoryItem.update({
-                  where: { id: item.itemId },
-                  data: {
-                    quantity: {
-                      decrement: item.amount,
-                    },
+      data: {
+        userId,
+        transactions: {
+          create: await Promise.all(
+            items.map(async (item: GroupSellItem) => {
+              const inventoryItem = await prisma.inventoryItem.findUnique({
+                where: { id: item.itemId },
+              });
+
+              if (!inventoryItem || inventoryItem.quantity < item.amount) {
+                throw new Error(`Producto insuficiente o inexistente: ${item.itemId}`);
+              }
+
+              await prisma.inventoryItem.update({
+                where: { id: item.itemId },
+                data: {
+                  quantity: {
+                    decrement: item.amount,
                   },
-                });
-      
-                return {
-                  item: { connect: { id: item.itemId } },
-                  amount: item.amount,
-                  price: item.price,
-                  type: TransactionType.VENTA_GRUPAL, // ✅ enum, no string
-                  User: { connect: { id: session.user.id } },
-                };
-              })
-            ),
-          },
+                },
+              });
+
+              return {
+                itemId: item.itemId,
+                amount: item.amount,
+                price: item.price,
+                type: TransactionType.VENTA_GRUPAL,
+                userId,
+              };
+            })
+          ),
         },
-      });
+      },
+    });
 
     return NextResponse.json({ success: true, groupId: group.id });
   } catch (error) {

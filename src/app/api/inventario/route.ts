@@ -10,47 +10,43 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    // Filtros opcionales
     const name = searchParams.get('name') || undefined;
-    const type = searchParams.get('type') || undefined;
+    const category = searchParams.get('category') || undefined;
     const unit = searchParams.get('unit') || undefined;
+    const code = searchParams.get('code') || undefined;
     const quantity = searchParams.get('quantity')
       ? parseFloat(searchParams.get('quantity')!)
       : undefined;
 
-      const where: Prisma.InventoryItemWhereInput = {
-        ...(name && {
-          name: {
-            contains: name,
-            mode: 'insensitive',
-          },
-        }),
-        ...(type && {
-          type: {
-            is: {
-              name: {
-                equals: type,
-                mode: 'insensitive',
-              },
-            },
-          },
-        }),
-        ...(unit && {
-          unit: {
-            is: {
-              name: {
-                equals: unit,
-                mode: 'insensitive',
-              },
-            },
-          },
-        }),
-        ...(quantity && {
-          quantity: {
-            gte: quantity,
-          },
-        }),
-      };
+    const where: Prisma.InventoryItemWhereInput = {
+      ...(name && {
+        name: {
+          contains: name,
+          mode: 'insensitive',
+        },
+      }),
+ ...(category && {
+  categoryId: category,
+}),
+      ...(code && {
+  subcategoryCode: {
+    is: {
+      code: {
+        equals: code,
+        mode: 'insensitive',
+      },
+    },
+  },
+}),
+...(unit && {
+  unitId: unit,
+}),
+      ...(quantity && {
+        quantity: {
+          gte: quantity,
+        },
+      }),
+    };
 
     const [items, total] = await Promise.all([
       prisma.inventoryItem.findMany({
@@ -59,8 +55,9 @@ export async function GET(req: NextRequest) {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          type: true,
+          category: true,
           unit: true,
+          subcategoryCode: true,
         },
       }),
       prisma.inventoryItem.count({ where }),
@@ -70,13 +67,19 @@ export async function GET(req: NextRequest) {
 data: items.map((item) => ({
   id: item.id,
   name: item.name,
-  typeId: item.typeId, 
-  type: { name: item.type?.name ?? '' },
-    unit: {
+  categoryId: item.categoryId,
+  category: {
+    id: item.category?.id ?? '',
+    name: item.category?.name ?? '',
+  },
+  unit: {
     id: item.unit?.id ?? '',
     name: item.unit?.name ?? '',
     valueType: item.unit?.valueType ?? 'DECIMAL',
   },
+  subcategoryCode: item.subcategoryCode
+    ? { id: item.subcategoryCode.id, code: item.subcategoryCode.code }
+    : null,
   quantity: item.quantity,
   price: item.price,
 })),

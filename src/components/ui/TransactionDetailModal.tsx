@@ -17,6 +17,7 @@ type DetailItem = {
   quantity: number;
   price?: number;
   total?: number;
+  code?: string;
 };
 
 type Props = {
@@ -73,7 +74,6 @@ export default function TransactionDetailModal({
   return (
     <Transition appear show={open} as={Fragment}>
       <Dialog as='div' className='relative z-50' onClose={onClose}>
-        {/* Fondo oscurecido con desenfoque */}
         <div className='fixed inset-0 bg-black/30 backdrop-blur-sm' />
 
         <div className='fixed inset-0 flex items-center justify-center p-4'>
@@ -111,8 +111,8 @@ export default function TransactionDetailModal({
                         className='border rounded-md p-4 text-sm bg-gray-50'
                       >
                         <p>
-                          <strong>{item.name}</strong> ({item.type} -{' '}
-                          {item.unit})
+                          <strong>{item.name}</strong> ({item.type}
+                          {item.code ? ` - ${item.code}` : ''} - {item.unit})
                         </p>
                         <p>Cantidad: {item.quantity}</p>
 

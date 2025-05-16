@@ -16,14 +16,14 @@ import { hasWriteAccess } from '@/lib/auth/roles';
 import GroupSellModal from '@/components/ui/GroupSellModal';
 import EditProductModal from '@/components/inventory/EditProductModal';
 
-// Tipos
 type Inventory = {
   id: string;
   name: string;
-  typeId: string;
-  type: { name: string; id: string };
+  categoryId: string;
+  category: { name: string; id: string };
   unit: { id: string; name: string; valueType: 'INTEGER' | 'DECIMAL' };
   quantity: number;
+  subcategoryCode?: { id: string; code: string } | null;
   price: number;
 };
 
@@ -47,7 +47,9 @@ export default function InventarioPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 10;
-  const [types, setTypes] = useState<{ id: string; name: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
+    [],
+  );
   const [units, setUnits] = useState<{ id: string; name: string }[]>([]);
 
   const openModal = (item: Inventory, type: ModalType) => {
@@ -72,11 +74,9 @@ export default function InventarioPage() {
         page: page.toString(),
         limit: pageSize.toString(),
         ...(filters.name && { name: filters.name }),
-        ...(filters.type && { type: filters.type }),
+        ...(filters.type && { category: filters.type }), // <-- FIX: type → category
         ...(filters.unit && { unit: filters.unit }),
-        ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
-        ...(filters.dateTo && { dateTo: filters.dateTo }),
-        ...(filters.quantity && { quantity: filters.quantity.toString() }),
+        ...(filters.code && { code: filters.code }), // <-- asegúrate que el backend lo use
       });
 
       const res = await fetch(`/api/inventario?${query.toString()}`);
@@ -102,7 +102,7 @@ export default function InventarioPage() {
     try {
       const res = await fetch('/api/inventario/metadata');
       const json = await res.json();
-      setTypes(json.types || []);
+      setCategories(json.categories || []);
       setUnits(json.units || []);
     } catch (err) {
       console.error('Error al cargar metadata de inventario', err);
@@ -112,9 +112,17 @@ export default function InventarioPage() {
   const columns: ColumnDef<Inventory>[] = [
     { accessorKey: 'name', header: 'Nombre' },
     {
-      accessorKey: 'type.name',
-      header: 'Tipo',
-      cell: (info) => info.row.original.type.name,
+      accessorKey: 'category.name',
+      header: 'Categoría',
+      cell: (info) => info.row.original.category.name,
+    },
+    {
+      accessorKey: 'subcategoryCode.code',
+      header: 'Código',
+      cell: (info) =>
+        info.row.original.subcategoryCode?.code || (
+          <span className='text-gray-400 italic'>Sin código</span>
+        ),
     },
     {
       accessorKey: 'unit.name',
@@ -170,12 +178,12 @@ export default function InventarioPage() {
       </div>
 
       <InventoryFilters
-        fields={['name', 'type', 'unit', 'quantity']}
+        fields={['name', 'type', 'code', 'unit']}
         onChange={(newFilters) => {
           setFilters(newFilters);
           setPage(1);
         }}
-        types={types}
+        types={categories}
         units={units}
       />
 
@@ -267,7 +275,7 @@ export default function InventarioPage() {
         onClose={() => setEditModalOpen(false)}
         onSuccess={fetchInventory}
         product={editingProduct}
-        types={types}
+        types={categories}
       />
     </div>
   );

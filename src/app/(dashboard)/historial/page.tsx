@@ -1,8 +1,10 @@
+// ✅ HistorialPage.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz'; // 👈 Importa util para conversión a zona horaria local
 
 import { DynamicTable } from '@/components/ui/DynamicTable';
 import InventoryFilters, {
@@ -20,8 +22,10 @@ import TransactionDetailModal from '@/components/ui/TransactionDetailModal';
 import { TransactionType } from '@prisma/client';
 import EditTransactionModal from '@/components/ui/EditTransactionModal';
 
-// Tipo para la fila de transacción
-type Transaction = {
+const TIMEZONE = 'America/Bogota'; // 👈 Zona horaria local
+
+// Actualiza tipo para incluir campo tipo
+export type Transaction = {
   id: string;
   createdAt: string;
   type: TransactionType;
@@ -40,8 +44,6 @@ export default function HistorialPage() {
   const [filters, setFilters] = useState<FilterValues>({});
   const [page, setPage] = useState(1);
   const pageSize = 10;
-  const [types, setTypes] = useState<{ id: string; name: string }[]>([]);
-  const [units, setUnits] = useState<{ id: string; name: string }[]>([]);
   const [selectedTransactionId, setSelectedTransactionId] = useState<
     string | null
   >(null);
@@ -54,11 +56,7 @@ export default function HistorialPage() {
       const query = new URLSearchParams({
         page: page.toString(),
         limit: pageSize.toString(),
-        ...(filters.name && { name: filters.name }),
         ...(filters.type && { type: filters.type }),
-        ...(filters.unit && { unit: filters.unit }),
-        ...(filters.user && { user: filters.user }),
-        ...(filters.quantity && { quantity: filters.quantity.toString() }),
         ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
         ...(filters.dateTo && { dateTo: filters.dateTo }),
       });
@@ -78,25 +76,13 @@ export default function HistorialPage() {
     fetchData();
   }, [filters, page]);
 
-  useEffect(() => {
-    fetchMetadata();
-  }, []);
-
-  const fetchMetadata = async () => {
-    try {
-      const res = await fetch('/api/inventario/metadata');
-      const json = await res.json();
-      setTypes(json.types || []);
-      setUnits(json.units || []);
-    } catch (err) {
-      console.error('Error al cargar metadata de inventario', err);
-    }
-  };
-
   const columns: ColumnDef<Transaction>[] = [
     {
       header: 'Fecha',
-      accessorFn: (row) => format(new Date(row.createdAt), 'dd/MM/yyyy HH:mm'),
+      accessorFn: (row) => {
+        const zonedDate = toZonedTime(new Date(row.createdAt), TIMEZONE);
+        return format(zonedDate, 'dd/MM/yyyy HH:mm');
+      },
     },
     {
       header: 'Tipo',
@@ -130,7 +116,6 @@ export default function HistorialPage() {
             bg: 'bg-yellow-100 text-yellow-700',
           },
         };
-
         const { icon, label, bg } = map[type as keyof typeof map] || {
           icon: null,
           label: type,
@@ -174,20 +159,18 @@ export default function HistorialPage() {
   return (
     <div className='p-4'>
       <InventoryFilters
-        fields={['name', 'type', 'unit', 'user', 'date']}
+        fields={['type', 'date']}
         onChange={(f) => {
           setFilters(f);
           setPage(1);
         }}
-        types={types}
-        units={units}
       />
 
       {loading ? (
         <div className='flex justify-center items-center py-32'>
           <Loader2 className='animate-spin w-6 h-6 text-blue-500' />
           <span className='ml-2 text-sm text-gray-600'>
-            Cargando inventario...
+            Cargando historial...
           </span>
         </div>
       ) : (

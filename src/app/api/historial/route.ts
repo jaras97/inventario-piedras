@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
-import { Prisma } from '@prisma/client';
+import { Prisma, TransactionType } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,8 +10,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    const name = searchParams.get('name') || undefined;
-    const type = searchParams.get('type') || undefined;
+    const transactionType = searchParams.get('type') || undefined;
     const unit = searchParams.get('unit') || undefined;
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
@@ -21,19 +20,6 @@ export async function GET(req: NextRequest) {
       : undefined;
 
     const itemFilters: Prisma.InventoryItemWhereInput = {};
-    if (name) {
-      itemFilters.name = { contains: name, mode: 'insensitive' };
-    }
-    if (type) {
-      itemFilters.type = {
-        is: {
-          name: {
-            equals: type,
-            mode: 'insensitive',
-          },
-        },
-      };
-    }
     if (unit) {
       itemFilters.unit = {
         is: {
@@ -46,6 +32,9 @@ export async function GET(req: NextRequest) {
     }
 
     const where: Prisma.InventoryTransactionWhereInput = {
+      ...(transactionType && {
+        type: transactionType  as TransactionType,
+      }),
       ...(Object.keys(itemFilters).length > 0 && {
         item: { is: itemFilters },
       }),
@@ -111,23 +100,23 @@ export async function GET(req: NextRequest) {
       };
     });
 
-const individualResults = individualTransactions.map((t) => ({
-  id: t.id,
-  createdAt: t.createdAt,
-  amount: t.amount,
-  type: t.type,
-  price: t.price,
-  itemName:
-    t.type === 'EDICION_PRODUCTO' ? `${t.item.name} (editado)` : t.item.name,
-  user: t.User?.name || 'Sistema',
-  isGrouped: false,
-  transactionKind:
-    t.type === 'EDICION_PRODUCTO'
-      ? 'edit'
-      : t.type.includes('VENTA')
-      ? 'sell'
-      : 'load',
-}));
+    const individualResults = individualTransactions.map((t) => ({
+      id: t.id,
+      createdAt: t.createdAt,
+      amount: t.amount,
+      type: t.type,
+      price: t.price,
+      itemName:
+        t.type === 'EDICION_PRODUCTO' ? `${t.item.name} (editado)` : t.item.name,
+      user: t.User?.name || 'Sistema',
+      isGrouped: false,
+      transactionKind:
+        t.type === 'EDICION_PRODUCTO'
+          ? 'edit'
+          : t.type.includes('VENTA')
+          ? 'sell'
+          : 'load',
+    }));
 
     const all = [...groupResults, ...individualResults].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()

@@ -8,16 +8,16 @@ import NumericInput from '@/components/components/NumericInput';
 
 export type ManualProduct = {
   name: string;
-  type: string;
+  category: string;
   unit: string;
   quantity: number;
-  price?: number; // solo se usa para venta
+  price?: number;
 };
 
 export type ProductOption = {
   id: string;
   name: string;
-  type: string;
+  category: string;
   unit: string;
   valueType: 'INTEGER' | 'DECIMAL';
   price: number;
@@ -56,14 +56,14 @@ export default function ManualProductTable({
       updated[index].name = val as string;
       const match = products.find((p) => p.name === val);
       if (match) {
-        updated[index].type = match.type;
+        updated[index].category = match.category;
         updated[index].unit = match.unit;
-        updated[index].quantity = 0; // Reset cantidad al cambiar producto
+        updated[index].quantity = 0;
         setUnitTypes((prev) => ({ ...prev, [index]: match.valueType }));
         setDisabledQuantity((prev) => ({ ...prev, [index]: false }));
         if (mode === 'sell') updated[index].price = match.price;
       } else {
-        updated[index].type = '';
+        updated[index].category = '';
         updated[index].unit = '';
         updated[index].quantity = 0;
         setDisabledQuantity((prev) => ({ ...prev, [index]: true }));
@@ -82,7 +82,7 @@ export default function ManualProductTable({
       ...value,
       {
         name: '',
-        type: '',
+        category: '',
         unit: '',
         quantity: 0,
         ...(mode === 'sell' ? { price: 0 } : {}),
@@ -94,7 +94,6 @@ export default function ManualProductTable({
     const updated = [...value];
     updated.splice(index, 1);
 
-    // Rebuild control states
     const newUnitTypes: typeof unitTypes = {};
     const newDisabled: typeof disabledQuantity = {};
     updated.forEach((_, i) => {
@@ -111,7 +110,7 @@ export default function ManualProductTable({
     <div className='space-y-4'>
       <div className='hidden lg:grid grid-cols-6 gap-2 font-medium text-sm text-gray-600'>
         <span>Nombre</span>
-        <span>Tipo</span>
+        <span>Categoría</span>
         <span>Unidad</span>
         <span>Cantidad</span>
         {mode === 'sell' && <span>Precio Venta</span>}
@@ -134,7 +133,7 @@ export default function ManualProductTable({
             />
 
             <span className='text-sm text-gray-700 hidden lg:block'>
-              {product.type || '-'}
+              {product.category || '-'}
             </span>
             <span className='text-sm text-gray-700 hidden lg:block'>
               {product.unit || '-'}
@@ -166,7 +165,7 @@ export default function ManualProductTable({
             </div>
 
             <div className='sm:hidden col-span-1 flex flex-col text-xs text-gray-500 mt-1'>
-              <span>Tipo: {product.type || '-'}</span>
+              <span>Categoría: {product.category || '-'}</span>
               <span>Unidad: {product.unit || '-'}</span>
             </div>
           </div>

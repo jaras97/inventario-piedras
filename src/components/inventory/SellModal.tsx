@@ -52,23 +52,19 @@ export default function SellModal({
   }, [open, unitId]);
 
   const schema = useMemo(() => {
-    const base = {
-      amount: z
-        .number({ invalid_type_error: 'Debe ser un número' })
-        .positive('Debe ser mayor a cero'),
-      price: z
-        .number({ invalid_type_error: 'Debe ser un número' })
-        .positive('Debe ser mayor a cero'),
-    };
-
     return z.object({
       amount:
         unitType === 'INTEGER'
-          ? base.amount.refine(Number.isInteger, {
-              message: 'Debe ser un número entero',
-            })
-          : base.amount,
-      price: base.price,
+          ? z
+              .number({ invalid_type_error: 'Debe ser un número' })
+              .int('Debe ser un número entero')
+              .positive('Debe ser mayor a cero')
+          : z
+              .number({ invalid_type_error: 'Debe ser un número' })
+              .positive('Debe ser mayor a cero'),
+      price: z
+        .number({ invalid_type_error: 'Debe ser un número' })
+        .positive('Debe ser mayor a cero'),
     });
   }, [unitType]);
 

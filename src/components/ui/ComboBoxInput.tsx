@@ -65,9 +65,9 @@ export default function ComboBoxInput({
             )}
             style={{ width: inputWidth ?? '100%' }}
           >
-            {filteredOptions.map((option) => (
+            {filteredOptions.map((option, index) => (
               <ComboboxOption
-                key={option}
+                key={index}
                 value={option}
                 className={({ active }) =>
                   cn(

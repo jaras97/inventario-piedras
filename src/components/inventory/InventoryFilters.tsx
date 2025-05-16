@@ -6,11 +6,13 @@ import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { Calendar } from '@/components/ui/Calendar';
+import { TransactionType } from '@prisma/client';
 
 export type InventoryFilters = {
   name?: string;
   type?: string;
   unit?: string;
+  code?: string;
   quantity?: number;
   user?: string;
   dateFrom?: string;
@@ -21,17 +23,32 @@ export type FilterField =
   | 'name'
   | 'type'
   | 'unit'
+  | 'code'
   | 'quantity'
   | 'user'
   | 'date';
+
+type TypeWithCodes = {
+  id: string;
+  name: string;
+  codes?: { id: string; code: string }[];
+};
 
 type Props = {
   onChange: (filters: InventoryFilters) => void;
   fields: FilterField[];
   loading?: boolean;
-  types?: { id: string; name: string }[];
+  types?: TypeWithCodes[];
   units?: { id: string; name: string }[];
 };
+
+const transactionTypeOptions: { value: TransactionType; label: string }[] = [
+  { value: 'CARGA_INDIVIDUAL', label: 'Carga individual' },
+  { value: 'CARGA_GRUPAL', label: 'Carga grupal' },
+  { value: 'VENTA_INDIVIDUAL', label: 'Venta individual' },
+  { value: 'VENTA_GRUPAL', label: 'Venta grupal' },
+  { value: 'EDICION_PRODUCTO', label: 'Edición de producto' },
+];
 
 export default function InventoryFilters({
   onChange,
@@ -56,11 +73,21 @@ export default function InventoryFilters({
 
   const handleDateChange = (range: DateRange | undefined) => {
     setDateRange(range);
+
+    const dateFrom = range?.from
+      ? new Date(range.from.setHours(0, 0, 0, 0)).toISOString()
+      : undefined;
+
+    const dateTo = range?.to
+      ? new Date(range.to.setHours(23, 59, 59, 999)).toISOString()
+      : undefined;
+
     const newFilters = {
       ...filters,
-      dateFrom: range?.from?.toISOString(),
-      dateTo: range?.to?.toISOString(),
+      dateFrom,
+      dateTo,
     };
+
     setFilters(newFilters);
     onChange(newFilters);
   };
@@ -83,12 +110,29 @@ export default function InventoryFilters({
           className='border border-gray-300 rounded px-3 py-2 text-sm w-full'
           onChange={handleInputChange}
         >
-          <option value=''>Tipo</option>
-          {types.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
+          <option value=''>Tipo de transacción</option>
+          {transactionTypeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
+        </select>
+      )}
+
+      {fields.includes('code') && (
+        <select
+          name='code'
+          className='border border-gray-300 rounded px-3 py-2 text-sm w-full'
+          onChange={handleInputChange}
+        >
+          <option value=''>Subcategoría</option>
+          {types
+            .flatMap((t) => t.codes || [])
+            .map((c) => (
+              <option key={c.id} value={c.code}>
+                {c.code}
+              </option>
+            ))}
         </select>
       )}
 

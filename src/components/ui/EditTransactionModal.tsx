@@ -23,6 +23,7 @@ export default function EditTransactionModal({
 }: Props) {
   const [loading, setLoading] = useState(true);
   const [productName, setProductName] = useState('');
+  const [productCode, setProductCode] = useState<string | null>(null);
   const [price, setPrice] = useState<number | null>(null);
   const [user, setUser] = useState('');
   const [date, setDate] = useState('');
@@ -37,8 +38,10 @@ export default function EditTransactionModal({
         const json = await res.json();
         const data = json.data;
 
-        setProductName(data.productos?.[0]?.name ?? '—');
-        setPrice(data.productos?.[0]?.price ?? null);
+        const item = data.productos?.[0];
+        setProductName(item?.name ?? '—');
+        setProductCode(item?.code ?? null);
+        setPrice(item?.price ?? null);
         setUser(data.user ?? 'Sistema');
         setDate(new Date(data.createdAt).toLocaleString());
       } catch (err) {
@@ -78,6 +81,7 @@ export default function EditTransactionModal({
                 <div className='space-y-2 text-sm'>
                   <p>
                     <strong>Producto editado:</strong> {productName}
+                    {productCode ? ` (${productCode})` : ''}
                   </p>
                   <p>
                     <strong>Nuevo precio:</strong>{' '}

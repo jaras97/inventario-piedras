@@ -5,18 +5,20 @@ import { Prisma } from '@prisma/client';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const from = searchParams.get('from') ;
+
+    const from = searchParams.get('from');
     const to = searchParams.get('to');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    
+    const code = searchParams.get('code')?.toUpperCase(); // código opcional
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const skip = (page - 1) * limit;
+
     if (!from || !to) {
       return NextResponse.json({ error: 'Fechas requeridas' }, { status: 400 });
     }
- 
-    const fromDate =  new Date(from);
 
-    const toDate =new Date(to);
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
 
     const where: Prisma.InventoryTransactionWhereInput = {
       type: { in: ['VENTA_INDIVIDUAL', 'VENTA_GRUPAL'] },
@@ -24,6 +26,16 @@ export async function GET(req: NextRequest) {
         gte: fromDate,
         lte: toDate,
       },
+      ...(code && {
+        item: {
+          subcategoryCode: {
+            code: {
+              equals: code,
+              mode: 'insensitive',
+            },
+          },
+        },
+      }),
     };
 
     const [totalCount, ventas] = await Promise.all([
@@ -35,12 +47,16 @@ export async function GET(req: NextRequest) {
           User: true,
         },
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
+        skip,
         take: limit,
       }),
     ]);
 
-    const totalVentas = ventas.reduce((sum, v) => sum + (v.price ?? 0) * v.amount, 0);
+    const totalVentas = ventas.reduce(
+      (sum, v) => sum + (v.price ?? 0) * v.amount,
+      0
+    );
+
     const totalUnidades = ventas.reduce((sum, v) => sum + v.amount, 0);
 
     return NextResponse.json({

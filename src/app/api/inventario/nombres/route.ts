@@ -3,31 +3,31 @@ import prisma from '@/lib/db/prisma';
 
 export async function GET() {
   try {
-  const products = await prisma.inventoryItem.findMany({
-  select: {
-    id: true,
-    name: true,
-    price: true,
-    unit: {
+    const products = await prisma.inventoryItem.findMany({
       select: {
+        id: true,
         name: true,
-        valueType: true, // <-- agregamos esto
+        price: true,
+        unit: {
+          select: {
+            name: true,
+            valueType: true,
+          },
+        },
+        category: {
+          select: { name: true },
+        },
       },
-    },
-    type: {
-      select: { name: true },
-    },
-  },
-});
+    });
 
-const mapped = products.map((item) => ({
-  id: item.id,
-  name: item.name,
-  type: item.type.name,
-  unit: item.unit.name,
-  valueType: item.unit.valueType, 
-  price: item.price,
-}));
+    const mapped = products.map((item) => ({
+      id: item.id,
+      name: item.name,
+      category: item.category.name,
+      unit: item.unit.name,
+      valueType: item.unit.valueType,
+      price: item.price,
+    }));
 
     return NextResponse.json(mapped);
   } catch (error) {

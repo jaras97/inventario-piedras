@@ -41,6 +41,12 @@ export default function UserModal({
     password: '',
   });
 
+  const roleOptions = [
+    { label: 'Administrador', value: 'ADMIN' },
+    { label: 'Usuario', value: 'USER' },
+    { label: 'Auditor', value: 'AUDITOR' },
+  ];
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -134,9 +140,14 @@ export default function UserModal({
                 )}
                 <Select
                   label='Rol'
-                  options={['ADMIN', 'USER', 'AUDITOR']}
-                  value={formData.role}
-                  onChange={(v) => setFormData({ ...formData, role: v })}
+                  options={roleOptions}
+                  value={
+                    roleOptions.find((opt) => opt.value === formData.role) ||
+                    null
+                  }
+                  onChange={(opt) =>
+                    setFormData({ ...formData, role: opt.value })
+                  }
                 />
                 <label className='flex items-center gap-2'>
                   <input

@@ -2,43 +2,41 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
+import { ROLES } from '@/lib/auth/roles';
 
 export async function POST(req: NextRequest) {
-  try {
-    const { name, typeId, unitId, quantity, price } = await req.json();
+   const session = await getServerSession(authOptions);
 
-    if (!name || !typeId || !unitId || quantity === undefined || price === undefined) {
-      return NextResponse.json(
-        { error: 'Faltan datos requeridos' },
-        { status: 400 }
-      );
+  if (!session?.user || session.user.role !== ROLES.ADMIN) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
+  try {
+    const { name, categoryId, unitId, subcategoryCodeId, quantity, price } = await req.json();
+
+    if (!name || !categoryId || !unitId || quantity === undefined || price === undefined) {
+      return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
     }
 
-    // Validar que el typeId y unitId existan
-    const [typeExists, unitExists] = await Promise.all([
-      prisma.inventoryType.findUnique({ where: { id: typeId } }),
+    const [categoryExists, unitExists] = await Promise.all([
+      prisma.inventoryCategory.findUnique({ where: { id: categoryId } }),
       prisma.inventoryUnit.findUnique({ where: { id: unitId } }),
     ]);
 
-    if (!typeExists || !unitExists) {
-      return NextResponse.json(
-        { error: 'Tipo o unidad inválida' },
-        { status: 400 }
-      );
+    if (!categoryExists || !unitExists) {
+      return NextResponse.json({ error: 'Categoría o unidad inválida' }, { status: 400 });
     }
 
-    // Crear el producto
     const newItem = await prisma.inventoryItem.create({
       data: {
         name,
-        typeId,
+        categoryId,
         unitId,
+        subcategoryCodeId: subcategoryCodeId || undefined,
         quantity,
         price,
       },
     });
 
-    // Si la cantidad es mayor que 0, registrar transacción de entrada
     if (quantity > 0) {
       const session = await getServerSession(authOptions);
       await prisma.inventoryTransaction.create({

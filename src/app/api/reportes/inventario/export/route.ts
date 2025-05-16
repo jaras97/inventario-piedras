@@ -1,4 +1,4 @@
-import {  NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import ExcelJS from 'exceljs';
 
@@ -6,8 +6,9 @@ export async function POST() {
   try {
     const items = await prisma.inventoryItem.findMany({
       include: {
-        type: true,
-        unit: true,
+        category: true, // ✅ nombre de categoría
+        unit: true,     // ✅ unidad
+        subcategoryCode: true, // ✅ código
       },
       orderBy: {
         name: 'asc',
@@ -19,7 +20,8 @@ export async function POST() {
 
     sheet.columns = [
       { header: 'Nombre', key: 'nombre', width: 30 },
-      { header: 'Tipo', key: 'tipo', width: 20 },
+      { header: 'Categoría', key: 'categoria', width: 20 },
+      { header: 'Código', key: 'codigo', width: 15 },
       { header: 'Unidad', key: 'unidad', width: 15 },
       { header: 'Cantidad', key: 'cantidad', width: 15 },
       { header: 'Precio Unitario', key: 'precio', width: 20 },
@@ -29,7 +31,8 @@ export async function POST() {
     items.forEach((item) => {
       sheet.addRow({
         nombre: item.name,
-        tipo: item.type.name,
+        categoria: item.category?.name ?? '',
+        codigo: item.subcategoryCode?.code ?? '',
         unidad: item.unit.name,
         cantidad: item.quantity,
         precio: item.price,

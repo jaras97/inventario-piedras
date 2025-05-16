@@ -1,5 +1,3 @@
-// app/api/historial/detalle/[id]/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 
@@ -15,8 +13,9 @@ export async function GET(
       include: {
         item: {
           include: {
-            type: true,
+            category: true,            
             unit: true,
+            subcategoryCode: true,    
           },
         },
         User: true,
@@ -30,11 +29,12 @@ export async function GET(
       );
     }
 
-    // Adaptamos al formato esperado por el modal
+    
     const detailItem = {
       name: transaction.item.name,
-      type: transaction.item.type.name,
+      type: transaction.item.category.name, 
       unit: transaction.item.unit.name,
+      code: transaction.item.subcategoryCode?.code ?? undefined, 
       quantity: transaction.amount,
       price: transaction.price ?? undefined,
       total: transaction.price ? transaction.amount * transaction.price : undefined,
@@ -46,7 +46,7 @@ export async function GET(
         user: transaction.User?.name || 'Sistema',
         productos: [detailItem],
         totalGeneral: detailItem.total ?? null,
-        type: transaction.type
+        type: transaction.type,
       },
     });
   } catch (error) {

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Select } from '@/components/ui/Select';
-import { LabeledInput } from '@/components/ui/LabeledInput';
 import { DynamicTable } from '@/components/ui/DynamicTable';
 import { ColumnDef } from '@tanstack/react-table';
 import { MonthYearPicker } from '@/components/ui/MonthPicker';
@@ -12,23 +11,14 @@ import { saveAs } from 'file-saver';
 import moment from 'moment-timezone';
 import ResumenTable from '@/components/components/ResumenTable';
 
-type TransactionType =
-  | 'Todas'
-  | 'CARGA_INDIVIDUAL'
-  | 'CARGA_GRUPAL'
-  | 'VENTA_INDIVIDUAL'
-  | 'VENTA_GRUPAL';
-
 type ReportType = 'Diario' | 'Mensual' | 'Por rango';
-type ReportKind = 'transacciones' | 'contable' | 'inventario';
+type ReportKind = 'contable' | 'inventario';
 
 type ReportFilters = {
   reportKind: ReportKind;
   reportType: ReportType;
   from: string;
   to: string;
-  transactionType: TransactionType;
-  product: string;
   monthYear: { year: number; month: number };
 };
 
@@ -50,18 +40,7 @@ type ContableResumen = {
 type ExportBody = {
   from?: string;
   to?: string;
-  transactionType?: string;
-  product?: string;
 };
-
-// Opciones para los selects
-const transactionTypes = [
-  { label: 'Todas', value: 'Todas' },
-  { label: 'Carga individual', value: 'CARGA_INDIVIDUAL' },
-  { label: 'Carga grupal', value: 'CARGA_GRUPAL' },
-  { label: 'Venta individual', value: 'VENTA_INDIVIDUAL' },
-  { label: 'Venta grupal', value: 'VENTA_GRUPAL' },
-];
 
 const reportTypes = [
   { label: 'Diario', value: 'Diario' },
@@ -70,19 +49,16 @@ const reportTypes = [
 ];
 
 const reportKinds = [
-  { label: 'Transacciones', value: 'transacciones' },
   { label: 'Contable', value: 'contable' },
   { label: 'Inventario', value: 'inventario' },
 ];
 
 export default function ReportesPage() {
   const [filters, setFilters] = useState<ReportFilters>({
-    reportKind: 'transacciones',
+    reportKind: 'contable',
     from: '',
     to: '',
     reportType: 'Diario',
-    transactionType: 'Todas',
-    product: 'Todos',
     monthYear: {
       year: new Date().getFullYear(),
       month: new Date().getMonth() + 1,
@@ -105,9 +81,6 @@ export default function ReportesPage() {
     { header: 'Total', accessorKey: 'total' },
     { header: 'Usuario', accessorKey: 'usuario' },
   ];
-
-  const totalGeneral = data.reduce((sum, d) => sum + d.total, 0);
-  const totalUnidades = data.reduce((sum, d) => sum + d.cantidad, 0);
 
   const getDateRange = () => {
     const zone = 'America/Bogota';
@@ -142,24 +115,6 @@ export default function ReportesPage() {
   const handleSearch = async () => {
     setLoading(true);
     const { from, to } = getDateRange();
-
-    if (filters.reportKind === 'transacciones') {
-      const queryParams: Record<string, string> = {
-        transactionType: filters.transactionType,
-        product: filters.product,
-      };
-
-      if (from) queryParams.from = from;
-      if (to) queryParams.to = to;
-
-      const query = new URLSearchParams(queryParams);
-      const res = await fetch(`/api/reportes?${query}`);
-      const json = await res.json();
-
-      setData(json.data || []);
-      setContableResumen(null);
-      setTotal(json.data?.length || 0);
-    }
 
     if (filters.reportKind === 'contable') {
       const queryParams: Record<string, string> = {
@@ -208,17 +163,10 @@ export default function ReportesPage() {
       body.to = to;
     }
 
-    if (filters.reportKind === 'transacciones') {
-      body.transactionType = filters.transactionType;
-      body.product = filters.product;
-    }
-
     const endpoint =
       filters.reportKind === 'contable'
         ? '/api/reportes/contable/export'
-        : filters.reportKind === 'inventario'
-        ? '/api/reportes/inventario/export'
-        : '/api/reportes/export';
+        : '/api/reportes/inventario/export';
 
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -299,34 +247,6 @@ export default function ReportesPage() {
               />
             </>
           )}
-
-        {filters.reportKind === 'transacciones' && (
-          <>
-            <Select
-              label='Tipo de transacción'
-              options={transactionTypes}
-              value={
-                transactionTypes.find(
-                  (r) => r.value === filters.transactionType,
-                ) || null
-              }
-              onChange={(opt) =>
-                setFilters({
-                  ...filters,
-                  transactionType: opt.value as TransactionType,
-                })
-              }
-            />
-            <LabeledInput
-              label='Producto'
-              placeholder='Todos'
-              value={filters.product}
-              onChange={(e) =>
-                setFilters({ ...filters, product: e.target.value })
-              }
-            />
-          </>
-        )}
       </div>
 
       <div className='flex gap-2 mb-4'>
@@ -338,34 +258,6 @@ export default function ReportesPage() {
         </Button>
       </div>
 
-      {filters.reportKind === 'transacciones' && data.length > 0 && (
-        <>
-          <ResumenTable
-            title='Resumen'
-            rows={[
-              {
-                label: 'Total vendido',
-                value: `$${totalGeneral.toLocaleString()}`,
-              },
-              { label: 'Total unidades', value: totalUnidades.toFixed(2) },
-              { label: 'Transacciones', value: data.length },
-            ]}
-          />
-          <DynamicTable
-            title='Resultados'
-            columns={columns}
-            data={data}
-            isLoading={loading}
-            pagination={{
-              page,
-              pageSize,
-              total,
-              onPageChange: setPage,
-            }}
-          />
-        </>
-      )}
-
       {filters.reportKind === 'contable' && contableResumen && (
         <>
           <ResumenTable
@@ -373,15 +265,17 @@ export default function ReportesPage() {
             rows={[
               {
                 label: 'Total ventas',
-                value: `$${contableResumen.totalVentas.toLocaleString()}`,
+                value: `$${(
+                  contableResumen?.totalVentas ?? 0
+                ).toLocaleString()}`,
               },
               {
                 label: 'Total unidades',
-                value: contableResumen.totalUnidades.toFixed(2),
+                value: (contableResumen?.totalUnidades ?? 0).toFixed(2),
               },
               {
                 label: 'Transacciones',
-                value: contableResumen.transacciones,
+                value: contableResumen?.transacciones ?? 0,
               },
             ]}
           />

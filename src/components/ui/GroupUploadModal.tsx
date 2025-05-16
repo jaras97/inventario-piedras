@@ -23,7 +23,7 @@ const tabs = [
 
 type ProductCSV = {
   name: string;
-  type: string;
+  category: string;
   unit: string;
   quantity: string | number;
 };
@@ -85,7 +85,11 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
           alert('No hay datos válidos en el archivo');
           return;
         }
-        payload = parsedData;
+
+        payload = parsedData.map((item) => ({
+          ...item,
+          quantity: Number(item.quantity),
+        }));
       } else {
         const valid = manualProducts
           .filter(
@@ -97,9 +101,10 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
           .map((item) => {
             const match = products.find((p) => p.name === item.name);
             return {
-              ...item,
-              type: match?.type || '',
+              name: item.name,
+              category: match?.category || '',
               unit: match?.unit || '',
+              quantity: item.quantity,
             };
           });
 
@@ -133,7 +138,6 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
     <Transition appear show={open} as={Fragment}>
       <Dialog as='div' className='relative z-50' onClose={onClose}>
         <div className='fixed inset-0 bg-black/30 backdrop-blur-sm' />
-
         <div className='fixed inset-0 flex items-center justify-center p-2 sm:p-4'>
           <TransitionChild
             as={Fragment}
