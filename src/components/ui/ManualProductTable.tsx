@@ -108,7 +108,7 @@ export default function ManualProductTable({
 
   return (
     <div className='space-y-4'>
-      <div className='hidden lg:grid grid-cols-6 gap-2 font-medium text-sm text-gray-600'>
+      <div className='hidden lg:grid lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-2 font-medium text-sm text-gray-600'>
         <span>Nombre</span>
         <span>Categoría</span>
         <span>Unidad</span>
@@ -124,7 +124,7 @@ export default function ManualProductTable({
         return (
           <div
             key={index}
-            className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 items-center border rounded p-3'
+            className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-2 items-center border rounded p-3'
           >
             <ComboBoxInput
               options={products.map((p) => p.name)}

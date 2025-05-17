@@ -2,13 +2,13 @@
 
 import {
   Combobox,
-  ComboboxButton,
   ComboboxInput,
-  ComboboxOption,
+  ComboboxButton,
   ComboboxOptions,
+  ComboboxOption,
 } from '@headlessui/react';
 import { Check, ChevronDown } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ComboBoxInputProps {
@@ -25,14 +25,6 @@ export default function ComboBoxInput({
   placeholder = 'Selecciona...',
 }: ComboBoxInputProps) {
   const [query, setQuery] = useState('');
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [inputWidth, setInputWidth] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (containerRef.current) {
-      setInputWidth(containerRef.current.offsetWidth);
-    }
-  }, [containerRef.current?.offsetWidth]);
 
   const filteredOptions =
     query === ''
@@ -43,27 +35,32 @@ export default function ComboBoxInput({
 
   return (
     <Combobox value={value} onChange={onChange}>
-      <div ref={containerRef} className='relative w-full'>
-        <div className='relative w-full cursor-default overflow-hidden rounded border border-gray-300 bg-white text-left shadow-sm focus:outline-none sm:text-sm'>
+      <div className='relative w-full'>
+        <div className='relative w-full'>
           <ComboboxInput
-            className='w-full border-none py-2 pl-3 pr-10 text-sm leading-5 text-gray-900 focus:ring-0'
-            onChange={(event) => setQuery(event.target.value)}
-            displayValue={(option: string) => option}
+            className='block w-full rounded border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 overflow-x-auto whitespace-nowrap'
+            style={{
+              textOverflow: 'unset',
+              whiteSpace: 'nowrap',
+              overflowX: 'auto',
+              minWidth: '0', // 👈 importante para flex/grid
+              maxWidth: '100%', // 👈 asegura que no colapse en containers
+            }}
+            onChange={(e) => setQuery(e.target.value)}
+            displayValue={() => value}
             placeholder={placeholder}
+            title={value}
           />
-          <ComboboxButton className='absolute inset-y-0 right-0 flex items-center pr-2'>
-            <ChevronDown className='h-4 w-4 text-gray-400' />
+          <ComboboxButton className='absolute inset-y-0 right-0 flex items-center pr-3'>
+            <ChevronDown className='h-4 w-4 text-gray-500' />
           </ComboboxButton>
         </div>
 
         {filteredOptions.length > 0 && (
           <ComboboxOptions
-            anchor='bottom'
             className={cn(
-              'absolute z-10 mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none',
-              inputWidth ? `w-[${inputWidth}px]` : 'w-full',
+              'absolute z-10 mt-1 max-h-60 w-full min-w-[10rem] overflow-auto rounded-md bg-white py-1 text-sm shadow-lg ring-1 ring-black/5 focus:outline-none',
             )}
-            style={{ width: inputWidth ?? '100%' }}
           >
             {filteredOptions.map((option, index) => (
               <ComboboxOption
@@ -71,7 +68,7 @@ export default function ComboBoxInput({
                 value={option}
                 className={({ active }) =>
                   cn(
-                    'relative cursor-default select-none py-2 pl-10 pr-4',
+                    'relative cursor-pointer select-none py-2 pl-10 pr-4 whitespace-normal break-words',
                     active ? 'bg-blue-600 text-white' : 'text-gray-900',
                   )
                 }
@@ -80,14 +77,15 @@ export default function ComboBoxInput({
                   <>
                     <span
                       className={cn(
-                        'block truncate',
-                        selected ? 'font-medium' : 'font-normal',
+                        'block',
+                        selected ? 'font-semibold' : 'font-normal',
                       )}
+                      title={option} // Tooltip para ver el texto completo
                     >
                       {option}
                     </span>
                     {selected && (
-                      <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-white'>
+                      <span className='absolute inset-y-0 left-0 flex items-center pl-3 text-blue-600'>
                         <Check className='h-4 w-4' aria-hidden='true' />
                       </span>
                     )}
