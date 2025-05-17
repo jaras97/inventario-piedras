@@ -5,9 +5,31 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { hasWriteAccess } from '@/lib/auth/roles';
 
+export async function GET(
+  _req: NextRequest,
+  context: { params: { id: string } }
+) {
+  try {
+    const { id } = await context.params;
+
+    const item = await prisma.inventoryItem.findUnique({
+      where: { id },
+    });
+
+    if (!item) {
+      return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
+    }
+
+    return NextResponse.json(item);
+  } catch (error) {
+    console.error('Error al obtener producto:', error);
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+  }
+}
+
 export async function PUT(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -17,24 +39,20 @@ export async function PUT(
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
-    const { id } = await context.params;
-const { name, categoryId, price } = await req.json();
+    const { id } = context.params;
+    const { name, categoryId, price } = await req.json();
 
-if (!name || !categoryId || price === null || price === undefined) {
-  return NextResponse.json(
-    { error: 'Datos incompletos para actualizar producto' },
-    { status: 400 }
-  );
-}
+    if (!name || !categoryId || price === null || price === undefined) {
+      return NextResponse.json(
+        { error: 'Datos incompletos para actualizar producto' },
+        { status: 400 }
+      );
+    }
 
-const updated = await prisma.inventoryItem.update({
-  where: { id },
-  data: {
-    name,
-    categoryId, // <- usa categoryId directamente
-    price,
-  },
-});
+    const updated = await prisma.inventoryItem.update({
+      where: { id },
+      data: { name, categoryId, price },
+    });
 
     await prisma.inventoryTransaction.create({
       data: {

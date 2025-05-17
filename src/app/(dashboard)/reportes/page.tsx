@@ -8,8 +8,9 @@ import { DynamicTable } from '@/components/ui/DynamicTable';
 import { ColumnDef } from '@tanstack/react-table';
 import { MonthYearPicker } from '@/components/ui/MonthPicker';
 import { saveAs } from 'file-saver';
-import moment from 'moment-timezone';
+
 import ResumenTable from '@/components/components/ResumenTable';
+import { DateTime } from 'luxon';
 
 type ReportType = 'Diario' | 'Mensual' | 'Por rango';
 type ReportKind = 'contable' | 'inventario';
@@ -88,26 +89,34 @@ export default function ReportesPage() {
     if (filters.reportKind === 'inventario') return { from: '', to: '' };
 
     if (filters.reportType === 'Diario') {
-      const base = moment.tz(filters.from, zone);
+      const base = DateTime.fromISO(filters.from, { zone });
+
       return {
-        from: base.startOf('day').utc().format(),
-        to: base.endOf('day').utc().format(),
+        from: base.startOf('day').toUTC().toISO(), // 2025-05-16T05:00:00.000Z
+        to: base.endOf('day').toUTC().toISO(), // 2025-05-17T04:59:59.999Z
       };
     }
 
     if (filters.reportType === 'Mensual') {
-      const base = moment.tz(
-        { year: filters.monthYear.year, month: filters.monthYear.month - 1 },
-        zone,
+      const base = DateTime.fromObject(
+        { year: filters.monthYear.year, month: filters.monthYear.month },
+        { zone },
       );
+
       return {
-        from: base.startOf('month').utc().format(),
-        to: base.endOf('month').utc().format(),
+        from: base.startOf('month').toUTC().toISO(),
+        to: base.endOf('month').toUTC().toISO(),
       };
     }
 
-    const from = moment.tz(filters.from, zone).startOf('day').utc().format();
-    const to = moment.tz(filters.to, zone).endOf('day').utc().format();
+    const from = DateTime.fromISO(filters.from, { zone })
+      .startOf('day')
+      .toUTC()
+      .toISO();
+    const to = DateTime.fromISO(filters.to, { zone })
+      .endOf('day')
+      .toUTC()
+      .toISO();
 
     return { from, to };
   };
@@ -159,8 +168,8 @@ export default function ReportesPage() {
     const body: ExportBody = {};
 
     if (filters.reportKind !== 'inventario') {
-      body.from = from;
-      body.to = to;
+      if (from) body.from = from;
+      if (to) body.to = to;
     }
 
     const endpoint =

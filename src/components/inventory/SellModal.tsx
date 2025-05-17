@@ -36,37 +36,9 @@ export default function SellModal({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [unitType, setUnitType] = useState<'INTEGER' | 'DECIMAL'>('DECIMAL');
-
-  useEffect(() => {
-    if (!open) return;
-    const fetchUnitType = async () => {
-      try {
-        const res = await fetch(`/api/unidades/${unitId}`);
-        const json = await res.json();
-        setUnitType(json.valueType || 'DECIMAL');
-      } catch (error) {
-        console.error('Error obteniendo unidad', error);
-      }
-    };
-    fetchUnitType();
-  }, [open, unitId]);
-
-  const schema = useMemo(() => {
-    return z.object({
-      amount:
-        unitType === 'INTEGER'
-          ? z
-              .number({ invalid_type_error: 'Debe ser un número' })
-              .int('Debe ser un número entero')
-              .positive('Debe ser mayor a cero')
-          : z
-              .number({ invalid_type_error: 'Debe ser un número' })
-              .positive('Debe ser mayor a cero'),
-      price: z
-        .number({ invalid_type_error: 'Debe ser un número' })
-        .positive('Debe ser mayor a cero'),
-    });
-  }, [unitType]);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [stock, setStock] = useState<number | null>(null);
+  const [adjusted, setAdjusted] = useState(false);
 
   const {
     handleSubmit,
@@ -75,12 +47,71 @@ export default function SellModal({
     reset,
     setValue,
   } = useForm<SellForm>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(
+      useMemo(() => {
+        return z.object({
+          amount:
+            unitType === 'INTEGER'
+              ? z
+                  .number()
+                  .int('Debe ser un número entero')
+                  .positive('Debe ser mayor a cero')
+              : z.number().positive('Debe ser mayor a cero'),
+          price: z.number().positive('Debe ser mayor a cero'),
+        });
+      }, [unitType]),
+    ),
     defaultValues: { amount: 0, price: 0 },
   });
 
+  useEffect(() => {
+    if (open) {
+      setAdjusted(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const fetchData = async () => {
+      try {
+        setErrorMessage('');
+
+        const [unitRes, itemRes] = await Promise.all([
+          fetch(`/api/unidades/${unitId}`),
+          fetch(`/api/inventario/${itemId}`),
+        ]);
+
+        const unitJson = unitRes.ok ? await unitRes.json() : null;
+        const itemJson = itemRes.ok ? await itemRes.json() : null;
+
+        if (!unitJson) throw new Error('No se pudo obtener la unidad');
+        if (!itemJson) throw new Error('No se pudo obtener el producto');
+
+        setUnitType(unitJson.valueType || 'DECIMAL');
+        if (itemJson.price) {
+          setValue('price', itemJson.price);
+        }
+        if (itemJson.quantity !== undefined) setStock(itemJson.quantity);
+      } catch (error) {
+        console.error('Error obteniendo datos del producto:', error);
+        setErrorMessage('Error al cargar información del producto.');
+      }
+    };
+
+    fetchData();
+  }, [open, itemId, unitId, setValue]);
+
   const onSubmit = async (data: SellForm) => {
+    setErrorMessage('');
+
+    if (stock !== null && data.amount > stock) {
+      setValue('amount', stock);
+      setAdjusted(true);
+      return;
+    }
     setLoading(true);
+
     const res = await fetch(`/api/inventario/${itemId}/salida`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -88,12 +119,14 @@ export default function SellModal({
     });
 
     setLoading(false);
+
     if (res.ok) {
       reset();
       onSuccess();
       onClose();
     } else {
-      alert('Error al vender inventario');
+      const err = await res.json();
+      setErrorMessage(err?.error || 'Error al vender inventario');
     }
   };
 
@@ -138,12 +171,25 @@ export default function SellModal({
                   allowDecimal={true}
                 />
 
-                <p className='text-sm font-medium text-gray-700 mt-2'>
-                  Total:{' '}
-                  <span className='font-bold text-blue-600'>
-                    ${total.toLocaleString()}
-                  </span>
-                </p>
+                <div className='space-y-1'>
+                  <p className='text-sm font-medium text-gray-700'>
+                    Total:{' '}
+                    <span className='font-bold text-blue-600'>
+                      ${total.toLocaleString()}
+                    </span>
+                  </p>
+
+                  {adjusted && (
+                    <p className='text-sm text-yellow-600'>
+                      La cantidad ingresada excedía el stock. Se ajustó al
+                      máximo disponible ({stock}).
+                    </p>
+                  )}
+
+                  {errorMessage && (
+                    <p className='text-sm text-red-600'>{errorMessage}</p>
+                  )}
+                </div>
 
                 <div className='flex justify-end gap-2 pt-4'>
                   <Button

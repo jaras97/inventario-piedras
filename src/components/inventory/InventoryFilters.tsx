@@ -17,6 +17,7 @@ export type InventoryFilters = {
   user?: string;
   dateFrom?: string;
   dateTo?: string;
+  category?: string;
 };
 
 export type FilterField =
@@ -26,7 +27,8 @@ export type FilterField =
   | 'code'
   | 'quantity'
   | 'user'
-  | 'date';
+  | 'date'
+  | 'category';
 
 type TypeWithCodes = {
   id: string;
@@ -102,6 +104,23 @@ export default function InventoryFilters({
           className='border border-gray-300 rounded px-3 py-2 text-sm w-full'
           onChange={handleInputChange}
         />
+      )}
+
+      {fields.includes('category') && (
+        <select
+          name='category'
+          className='border border-gray-300 rounded px-3 py-2 text-sm w-full'
+          onChange={handleInputChange}
+        >
+          <option value=''>Categoría</option>
+          {types.map((t) => (
+            <option key={t.id} value={t.id}>
+              {' '}
+              {/* ← Asegúrate de usar el id aquí */}
+              {t.name}
+            </option>
+          ))}
+        </select>
       )}
 
       {fields.includes('type') && (

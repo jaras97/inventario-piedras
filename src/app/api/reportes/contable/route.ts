@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
+import moment from 'moment-timezone';
 
 export async function GET(req: NextRequest) {
+  const TIMEZONE = 'America/Bogota';
   try {
     const { searchParams } = new URL(req.url);
 
@@ -63,8 +65,9 @@ export async function GET(req: NextRequest) {
       totalVentas,
       totalUnidades,
       transacciones: totalCount,
-      data: ventas.map((v) => ({
-        fecha: v.createdAt.toISOString().split('T')[0],
+
+data: ventas.map((v) => ({
+  fecha: moment(v.createdAt).tz(TIMEZONE).format('YYYY-MM-DD HH:mm'),
         producto: v.item?.name ?? '',
         cantidad: v.amount,
         precioUnit: v.price ?? 0,

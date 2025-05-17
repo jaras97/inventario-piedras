@@ -8,6 +8,7 @@ export async function GET() {
         id: true,
         name: true,
         price: true,
+        quantity: true, 
         unit: {
           select: {
             name: true,
@@ -27,6 +28,7 @@ export async function GET() {
       unit: item.unit.name,
       valueType: item.unit.valueType,
       price: item.price,
+      quantity: item.quantity, 
     }));
 
     return NextResponse.json(mapped);

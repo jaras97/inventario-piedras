@@ -21,6 +21,7 @@ export type ProductOption = {
   unit: string;
   valueType: 'INTEGER' | 'DECIMAL';
   price: number;
+  quantity: number;
 };
 
 type Props = {
@@ -42,6 +43,7 @@ export default function ManualProductTable({
   const [disabledQuantity, setDisabledQuantity] = useState<
     Record<number, boolean>
   >({});
+  const [warnings, setWarnings] = useState<Record<number, string>>({});
 
   const handleChange = (
     index: number,
@@ -49,9 +51,32 @@ export default function ManualProductTable({
     val: string | number,
   ) => {
     const updated = [...value];
+    const current = updated[index];
 
-    if (field === 'quantity' || field === 'price') {
-      updated[index][field] = typeof val === 'number' ? val : Number(val);
+    if (field === 'quantity') {
+      const newQty = typeof val === 'number' ? val : Number(val);
+      const match = products.find((p) => p.name === current.name);
+
+      if (match && mode === 'sell') {
+        if (newQty > match.quantity) {
+          updated[index].quantity = match.quantity;
+          setWarnings((prev) => ({
+            ...prev,
+            [index]: `Cantidad ajustada al stock disponible (${match.quantity}) para "${match.name}"`,
+          }));
+        } else {
+          updated[index].quantity = newQty;
+          setWarnings((prev) => {
+            return Object.fromEntries(
+              Object.entries(prev).filter(([key]) => Number(key) !== index),
+            );
+          });
+        }
+      } else {
+        updated[index].quantity = newQty;
+      }
+    } else if (field === 'price') {
+      updated[index].price = typeof val === 'number' ? val : Number(val);
     } else if (field === 'name') {
       updated[index].name = val as string;
       const match = products.find((p) => p.name === val);
@@ -61,6 +86,12 @@ export default function ManualProductTable({
         updated[index].quantity = 0;
         setUnitTypes((prev) => ({ ...prev, [index]: match.valueType }));
         setDisabledQuantity((prev) => ({ ...prev, [index]: false }));
+        setWarnings((prev) => {
+          const rest = Object.fromEntries(
+            Object.entries(prev).filter(([key]) => Number(key) !== index),
+          );
+          return rest;
+        });
         if (mode === 'sell') updated[index].price = match.price;
       } else {
         updated[index].category = '';
@@ -68,8 +99,6 @@ export default function ManualProductTable({
         updated[index].quantity = 0;
         setDisabledQuantity((prev) => ({ ...prev, [index]: true }));
       }
-    } else {
-      updated[index][field] = val as string;
     }
 
     onChange(updated);
@@ -96,13 +125,18 @@ export default function ManualProductTable({
 
     const newUnitTypes: typeof unitTypes = {};
     const newDisabled: typeof disabledQuantity = {};
+    const newWarnings: typeof warnings = {};
     updated.forEach((_, i) => {
       newUnitTypes[i] = unitTypes[i >= index ? i + 1 : i];
       newDisabled[i] = disabledQuantity[i >= index ? i + 1 : i];
+      if (warnings[i >= index ? i + 1 : i]) {
+        newWarnings[i] = warnings[i >= index ? i + 1 : i];
+      }
     });
 
     setUnitTypes(newUnitTypes);
     setDisabledQuantity(newDisabled);
+    setWarnings(newWarnings);
     onChange(updated);
   };
 
@@ -163,6 +197,12 @@ export default function ManualProductTable({
                 <Trash className='w-4 h-4' />
               </button>
             </div>
+
+            {warnings[index] && (
+              <div className='sm:col-span-2 lg:col-span-6 text-yellow-600 text-xs mt-1'>
+                {warnings[index]}
+              </div>
+            )}
 
             <div className='sm:hidden col-span-1 flex flex-col text-xs text-gray-500 mt-1'>
               <span>Categoría: {product.category || '-'}</span>

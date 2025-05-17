@@ -74,7 +74,7 @@ export default function InventarioPage() {
         page: page.toString(),
         limit: pageSize.toString(),
         ...(filters.name && { name: filters.name }),
-        ...(filters.type && { category: filters.type }), // <-- FIX: type → category
+        ...(filters.category && { category: filters.category }), // <-- FIX: type → category
         ...(filters.unit && { unit: filters.unit }),
         ...(filters.code && { code: filters.code }), // <-- asegúrate que el backend lo use
       });
@@ -178,7 +178,7 @@ export default function InventarioPage() {
       </div>
 
       <InventoryFilters
-        fields={['name', 'type', 'code', 'unit']}
+        fields={['name', 'category', 'code', 'unit']}
         onChange={(newFilters) => {
           setFilters(newFilters);
           setPage(1);
