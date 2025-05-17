@@ -11,9 +11,6 @@ import { saveAs } from 'file-saver';
 import moment from 'moment-timezone';
 import ResumenTable from '@/components/components/ResumenTable';
 
-import { ROLES } from '@/lib/auth/roles';
-import { useRoleProtection } from '@/lib/hooks/useCurrentUser';
-
 type ReportType = 'Diario' | 'Mensual' | 'Por rango';
 type ReportKind = 'contable' | 'inventario';
 
@@ -75,7 +72,6 @@ export default function ReportesPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
-  const { user, isLoading } = useRoleProtection([ROLES.ADMIN, ROLES.AUDITOR]);
 
   const columns: ColumnDef<Reporte>[] = [
     { header: 'Fecha', accessorKey: 'fecha' },
@@ -186,8 +182,6 @@ export default function ReportesPage() {
     const blob = await res.blob();
     saveAs(blob, 'Reporte.xlsx');
   };
-
-  if (isLoading || !user) return null;
 
   return (
     <div className='p-4'>

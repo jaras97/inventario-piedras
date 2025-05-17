@@ -56,7 +56,6 @@ export default function LoginForm() {
     }
   };
 
-  // 🌀 Muestra loader suave mientras detecta el estado de sesión
   if (status === 'loading') {
     return (
       <div className='fixed inset-0 flex items-center justify-center bg-white z-50'>
@@ -73,54 +72,49 @@ export default function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className='bg-white p-8 rounded shadow-md w-full max-w-sm'
+      className='bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto border border-gray-200'
     >
-      <h1 className='text-xl font-semibold mb-4'>Iniciar sesión</h1>
+      <h1 className='text-2xl font-bold text-center text-blue-600 mb-6'>
+        Iniciar sesión
+      </h1>
 
       <div className='mb-4'>
-        <label className='block mb-1 font-medium'>Email</label>
+        <label className='block mb-1 font-medium text-gray-700'>Email</label>
         <input
           type='email'
           {...register('email')}
-          className='w-full border rounded px-3 py-2'
+          className='w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
         />
         {errors.email && (
-          <p className='text-red-500 text-sm'>{errors.email.message}</p>
+          <p className='text-red-500 text-sm mt-1'>{errors.email.message}</p>
         )}
       </div>
 
       <div className='mb-4'>
-        <label className='block mb-1 font-medium'>Contraseña</label>
+        <label className='block mb-1 font-medium text-gray-700'>
+          Contraseña
+        </label>
         <input
           type='password'
           {...register('password')}
-          className='w-full border rounded px-3 py-2'
+          className='w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
         />
         {errors.password && (
-          <p className='text-red-500 text-sm'>{errors.password.message}</p>
+          <p className='text-red-500 text-sm mt-1'>{errors.password.message}</p>
         )}
       </div>
 
-      {error && <p className='text-red-500 text-sm mb-4'>{error}</p>}
+      {error && (
+        <p className='text-red-500 text-sm mb-4 text-center'>{error}</p>
+      )}
 
       <button
         type='submit'
         disabled={isSubmitting}
-        className='w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition'
+        className='w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition font-semibold'
       >
         {isSubmitting ? 'Ingresando...' : 'Ingresar'}
       </button>
-
-      <div className='mt-6 text-center'>
-        <p className='text-sm text-gray-600 mb-2'>o</p>
-        <button
-          type='button'
-          onClick={() => signIn('google')}
-          className='w-full border text-gray-800 py-2 rounded hover:bg-gray-100 transition'
-        >
-          Ingresar con Google
-        </button>
-      </div>
     </form>
   );
 }

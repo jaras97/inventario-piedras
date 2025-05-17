@@ -21,9 +21,6 @@ import {
 import TransactionDetailModal from '@/components/ui/TransactionDetailModal';
 import { TransactionType } from '@prisma/client';
 import EditTransactionModal from '@/components/ui/EditTransactionModal';
-import { useRoleProtection } from '@/lib/hooks/useCurrentUser';
-
-import { ROLES } from '@/lib/auth/roles';
 
 const TIMEZONE = 'America/Bogota'; // 👈 Zona horaria local
 
@@ -52,7 +49,6 @@ export default function HistorialPage() {
   >(null);
   const [isGrouped, setIsGrouped] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const { user, isLoading } = useRoleProtection([ROLES.ADMIN, ROLES.AUDITOR]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -159,8 +155,6 @@ export default function HistorialPage() {
       ),
     },
   ];
-
-  if (isLoading || !user) return null;
 
   return (
     <div className='p-4'>
