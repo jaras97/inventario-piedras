@@ -16,6 +16,7 @@ export default function SidebarLayout() {
   const showReportes = role === 'ADMIN' || role === 'AUDITOR';
   const showUsuarios = role === 'ADMIN';
   const showUnidades = role === 'ADMIN';
+  const showCategories = role === 'ADMIN';
 
   return (
     <>
@@ -63,9 +64,11 @@ export default function SidebarLayout() {
                 Unidades
               </SidebarLink>
             )}
-            <SidebarLink href='/categorias' currentPath={pathname}>
-              Categorias
-            </SidebarLink>
+            {showCategories && (
+              <SidebarLink href='/categorias' currentPath={pathname}>
+                Categorias
+              </SidebarLink>
+            )}
           </nav>
         </div>
 

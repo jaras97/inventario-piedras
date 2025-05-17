@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import UnitModal from '@/components/components/UnitModal';
 import { ColumnDef } from '@tanstack/react-table';
 import { DynamicTable } from '@/components/ui/DynamicTable';
+import { useCurrentUser } from '@/lib/hooks/useCurrentUser';
+import { useRouter } from 'next/navigation';
+import { ROLES } from '@/lib/auth/roles';
 
 type Unidad = {
   id: string;
@@ -18,6 +21,18 @@ export default function UnidadesPage() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unidad | null>(null);
+  const { user, isLoading: loadingUser } = useCurrentUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    fetchUnidades();
+  }, []);
+
+  useEffect(() => {
+    if (!loadingUser && user?.role !== ROLES.ADMIN) {
+      router.replace('/dashboard');
+    }
+  }, [user, loadingUser, router]);
 
   const fetchUnidades = async () => {
     setLoading(true);
@@ -26,9 +41,6 @@ export default function UnidadesPage() {
     setUnidades(json.data || []);
     setLoading(false);
   };
-  useEffect(() => {
-    fetchUnidades();
-  }, []);
 
   const columns: ColumnDef<Unidad>[] = [
     {
