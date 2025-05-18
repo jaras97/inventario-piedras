@@ -7,10 +7,10 @@ import { hasWriteAccess } from '@/lib/auth/roles';
 
 export async function GET(
   _req: NextRequest,
-  context: { params: { id: string } }
+  {params}: {params: Promise<{ id: string }>}
 ) {
   try {
-    const { id } = context.params;
+    const { id } = await params;
 
     const item = await prisma.inventoryItem.findUnique({
       where: { id },
@@ -29,7 +29,7 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  context: { params: { id: string } }
+  {params}: {params: Promise<{ id: string }>}
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -39,7 +39,7 @@ export async function PUT(
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
-    const { id } = context.params;
+    const { id } = await params;
     const { name, categoryId, price } = await req.json();
 
     if (!name || !categoryId || price === null || price === undefined) {
