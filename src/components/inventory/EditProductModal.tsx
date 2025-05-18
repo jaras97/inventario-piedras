@@ -26,10 +26,21 @@ interface Props {
     id: string;
     name: string;
     categoryId: string;
+    subcategoryCode?: {
+      id: string;
+      code: string;
+      name?: string | null;
+    } | null;
     price: number;
   } | null;
   types: { id: string; name: string }[];
 }
+
+type SubcategoryCode = {
+  id: string;
+  code: string;
+  name?: string | null;
+};
 
 export default function EditProductModal({
   open,
@@ -42,13 +53,17 @@ export default function EditProductModal({
     name: string;
     category: SelectOption | null;
     price: number;
+    code: SelectOption | null;
   }>({
     name: '',
     category: null,
     price: 0,
+    code: null,
   });
 
+  const [codes, setCodes] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const categoryOptions = useMemo(
     () => types.map((t) => ({ label: t.name, value: t.id })),
@@ -57,18 +72,66 @@ export default function EditProductModal({
 
   useEffect(() => {
     if (!open || !product) return;
+
     const selectedCategory =
       categoryOptions.find((opt) => opt.value === product.categoryId) || null;
 
-    setForm({
-      name: product.name,
-      category: selectedCategory,
-      price: product.price,
-    });
+    const fetchCodes = async () => {
+      if (!selectedCategory) return;
+      const res = await fetch(
+        `/api/codigos?categoryId=${selectedCategory.value}`,
+      );
+      const json = (await res.json()) as SubcategoryCode[];
+      const options: SelectOption[] = json.map((code) => ({
+        label: code.name || code.code,
+        value: code.id,
+      }));
+
+      setCodes(options);
+
+      const selectedCode =
+        options.find((opt) => opt.value === product.subcategoryCode?.id) ||
+        null;
+
+      setForm({
+        name: product.name,
+        category: selectedCategory,
+        price: product.price,
+        code: selectedCode,
+      });
+    };
+
+    fetchCodes();
   }, [open, product, categoryOptions]);
 
+  const handleCategoryChange = async (opt: SelectOption | null) => {
+    setForm({ ...form, category: opt, code: null });
+
+    if (!opt) {
+      setCodes([]);
+      return;
+    }
+
+    const res = await fetch(`/api/codigos?categoryId=${opt.value}`);
+    const json = (await res.json()) as SubcategoryCode[];
+    const options: SelectOption[] = json.map((code) => ({
+      label: code.name || code.code,
+      value: code.id,
+    }));
+
+    setCodes(options);
+  };
+
   const handleSubmit = async () => {
+    setError(null);
+
     if (!product || !form.category) return;
+
+    if (codes.length > 0 && !form.code) {
+      setError('Debe seleccionar un código');
+      return;
+    }
+
     setLoading(true);
     const res = await fetch(`/api/inventario/${product.id}`, {
       method: 'PUT',
@@ -77,6 +140,7 @@ export default function EditProductModal({
         name: form.name,
         categoryId: form.category.value,
         price: form.price,
+        subcategoryCodeId: form.code?.value || null,
       }),
     });
 
@@ -120,8 +184,22 @@ export default function EditProductModal({
                   label='Categoría'
                   options={categoryOptions}
                   value={form.category}
-                  onChange={(opt) => setForm({ ...form, category: opt })}
+                  onChange={handleCategoryChange}
                 />
+
+                {codes.length > 0 && (
+                  <div>
+                    <Select
+                      label='Código'
+                      options={codes}
+                      value={form.code}
+                      onChange={(opt) => setForm({ ...form, code: opt })}
+                    />
+                    {error && (
+                      <p className='text-sm text-red-500 mt-1'>{error}</p>
+                    )}
+                  </div>
+                )}
 
                 <NumericInput
                   label='Precio'

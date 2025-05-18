@@ -11,6 +11,7 @@ import { saveAs } from 'file-saver';
 
 import ResumenTable from '@/components/components/ResumenTable';
 import { DateTime } from 'luxon';
+import { formatNumber } from '@/lib/utils/format';
 
 type ReportType = 'Diario' | 'Mensual' | 'Por rango';
 type ReportKind = 'contable' | 'inventario';
@@ -77,9 +78,21 @@ export default function ReportesPage() {
   const columns: ColumnDef<Reporte>[] = [
     { header: 'Fecha', accessorKey: 'fecha' },
     { header: 'Producto', accessorKey: 'producto' },
-    { header: 'Cantidad', accessorKey: 'cantidad' },
-    { header: 'Precio Unit', accessorKey: 'precioUnit' },
-    { header: 'Total', accessorKey: 'total' },
+    {
+      header: 'Cantidad',
+      accessorKey: 'cantidad',
+      cell: ({ getValue }) => formatNumber(getValue<number>(), 3),
+    },
+    {
+      header: 'Precio Unit',
+      accessorKey: 'precioUnit',
+      cell: ({ getValue }) => `$${formatNumber(getValue<number>(), 3)}`,
+    },
+    {
+      header: 'Total',
+      accessorKey: 'total',
+      cell: ({ getValue }) => `$${formatNumber(getValue<number>(), 3)}`,
+    },
     { header: 'Usuario', accessorKey: 'usuario' },
   ];
 
@@ -274,17 +287,15 @@ export default function ReportesPage() {
             rows={[
               {
                 label: 'Total ventas',
-                value: `$${(
-                  contableResumen?.totalVentas ?? 0
-                ).toLocaleString()}`,
+                value: `$${formatNumber(contableResumen?.totalVentas ?? 0, 3)}`,
               },
               {
                 label: 'Total unidades',
-                value: (contableResumen?.totalUnidades ?? 0).toFixed(2),
+                value: formatNumber(contableResumen?.totalUnidades ?? 0, 3),
               },
               {
                 label: 'Transacciones',
-                value: contableResumen?.transacciones ?? 0,
+                value: formatNumber(contableResumen?.transacciones ?? 0, 0),
               },
             ]}
           />

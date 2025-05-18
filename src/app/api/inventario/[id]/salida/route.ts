@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { hasWriteAccess } from '@/lib/auth/roles';
 import { TransactionType } from '@prisma/client';
+import { roundToDecimals } from '@/lib/utils/round';
 
 export async function POST(
   req: NextRequest,
@@ -19,6 +20,9 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    const roundedAmount = roundToDecimals(amount, 3);
+const roundedPrice = roundToDecimals(price, 3);
 
     const item = await prisma.inventoryItem.findUnique({ where: { id } });
     if (!item) {
@@ -46,8 +50,8 @@ export async function POST(
       data: {
         itemId: id,
         type: TransactionType.VENTA_INDIVIDUAL,
-        amount,
-        price,
+        amount:roundedAmount,
+        price:roundedPrice,
         userId: session?.user.id,
       },
     });
@@ -56,7 +60,7 @@ export async function POST(
       where: { id },
       data: {
         quantity: {
-          decrement: amount,
+          decrement: roundedAmount,
         },
       },
     });

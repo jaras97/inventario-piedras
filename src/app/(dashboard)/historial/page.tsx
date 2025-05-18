@@ -21,6 +21,7 @@ import {
 import TransactionDetailModal from '@/components/ui/TransactionDetailModal';
 import { TransactionType } from '@prisma/client';
 import EditTransactionModal from '@/components/ui/EditTransactionModal';
+import { formatNumber } from '@/lib/utils/format';
 
 const TIMEZONE = 'America/Bogota'; // 👈 Zona horaria local
 
@@ -132,7 +133,11 @@ export default function HistorialPage() {
         );
       },
     },
-    { header: 'Cantidad', accessorKey: 'amount' },
+    {
+      header: 'Cantidad',
+      accessorKey: 'amount',
+      cell: ({ getValue }) => formatNumber(getValue<number>(), 3),
+    },
     { header: 'Material', accessorKey: 'itemName' },
     { header: 'Usuario', accessorKey: 'user' },
     {

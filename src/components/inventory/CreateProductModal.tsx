@@ -53,21 +53,24 @@ export default function CreateProductModal({
       name: z.string().min(1, 'El nombre es obligatorio'),
       categoryId: z.string().min(1, 'Seleccione una categoría'),
       unitId: z.string().min(1, 'Seleccione una unidad'),
-      subcategoryCodeId: z.string().optional(),
+      subcategoryCodeId:
+        codes.length > 0
+          ? z.string().min(1, 'Debe seleccionar un código')
+          : z.string().optional(),
       quantity:
         unitType === 'INTEGER'
           ? z
               .number({ invalid_type_error: 'Debe ser un número' })
               .int()
-              .nonnegative()
+              .positive('Debe ser mayor a 0')
           : z
               .number({ invalid_type_error: 'Debe ser un número' })
-              .nonnegative(),
+              .positive('Debe ser mayor a 0'),
       price: z
         .number({ invalid_type_error: 'Debe ser un número' })
-        .nonnegative(),
+        .positive('Debe ser mayor a 0'),
     });
-  }, [unitType]);
+  }, [unitType, codes]);
 
   const {
     register,
@@ -88,11 +91,10 @@ export default function CreateProductModal({
     },
   });
 
-  const name = watch('name');
   const categoryId = watch('categoryId');
   const unitId = watch('unitId');
 
-  const disableInputs = !name || !categoryId || !unitId;
+  const disableFields = !unitId;
 
   useEffect(() => {
     if (!open) return;
@@ -188,25 +190,6 @@ export default function CreateProductModal({
                   )}
                 </div>
 
-                {codes.length > 0 && (
-                  <div>
-                    <label className='block text-sm font-medium mb-1'>
-                      Código
-                    </label>
-                    <select
-                      className='w-full border rounded px-3 py-2 text-sm'
-                      {...register('subcategoryCodeId')}
-                    >
-                      <option value=''>Sin código</option>
-                      {codes.map((code) => (
-                        <option key={code.id} value={code.id}>
-                          {code.name || code.code}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
                 <div>
                   <label className='block text-sm font-medium mb-1'>
                     Unidad
@@ -229,13 +212,38 @@ export default function CreateProductModal({
                   )}
                 </div>
 
+                {codes.length > 0 && (
+                  <div>
+                    <label className='block text-sm font-medium mb-1'>
+                      Código
+                    </label>
+                    <select
+                      className='w-full border rounded px-3 py-2 text-sm'
+                      {...register('subcategoryCodeId')}
+                      disabled={codes.length === 0}
+                    >
+                      <option value=''>Seleccione un código</option>
+                      {codes.map((code) => (
+                        <option key={code.id} value={code.id}>
+                          {code.name || code.code}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.subcategoryCodeId && (
+                      <p className='text-sm text-red-500 mt-1'>
+                        {errors.subcategoryCodeId.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <NumericInput
                   label='Cantidad inicial'
                   value={watch('quantity')}
                   onChange={(val) => setValue('quantity', val)}
                   error={errors.quantity?.message}
                   allowDecimal={unitType !== 'INTEGER'}
-                  disabled={disableInputs}
+                  disabled={disableFields}
                 />
 
                 <NumericInput
@@ -244,14 +252,14 @@ export default function CreateProductModal({
                   onChange={(val) => setValue('price', val)}
                   error={errors.price?.message}
                   allowDecimal={true}
-                  disabled={disableInputs}
+                  disabled={disableFields}
                 />
 
                 <div className='flex justify-end gap-2 pt-4'>
                   <Button variant='outline' onClick={onClose}>
                     Cancelar
                   </Button>
-                  <Button type='submit' disabled={loading || disableInputs}>
+                  <Button type='submit' disabled={loading}>
                     {loading ? 'Creando...' : 'Crear'}
                   </Button>
                 </div>

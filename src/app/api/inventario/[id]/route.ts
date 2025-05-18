@@ -7,7 +7,7 @@ import { hasWriteAccess } from '@/lib/auth/roles';
 
 export async function GET(
   _req: NextRequest,
-  {params}: {params: Promise<{ id: string }>}
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
@@ -29,7 +29,7 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  {params}: {params: Promise<{ id: string }>}
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -40,7 +40,7 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const { name, categoryId, price } = await req.json();
+    const { name, categoryId, price, subcategoryCodeId } = await req.json();
 
     if (!name || !categoryId || price === null || price === undefined) {
       return NextResponse.json(
@@ -49,9 +49,22 @@ export async function PUT(
       );
     }
 
+    // Validación opcional para subcategoryCodeId si se usa
+    if (subcategoryCodeId !== undefined && subcategoryCodeId !== null && typeof subcategoryCodeId !== 'string') {
+      return NextResponse.json(
+        { error: 'Código de subcategoría inválido' },
+        { status: 400 }
+      );
+    }
+
     const updated = await prisma.inventoryItem.update({
       where: { id },
-      data: { name, categoryId, price },
+      data: {
+        name,
+        categoryId,
+        price,
+        subcategoryCodeId: subcategoryCodeId ?? null,
+      },
     });
 
     await prisma.inventoryTransaction.create({

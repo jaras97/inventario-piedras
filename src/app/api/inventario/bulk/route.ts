@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { TransactionType } from '@prisma/client';
 import { hasWriteAccess } from '@/lib/auth/roles';
+import { roundToDecimals } from '@/lib/utils/round';
 
 type ProductCSV = {
   name: string;
@@ -56,7 +57,8 @@ export async function POST(req: NextRequest) {
       });
 
       if (existing) {
-        const quantity = Number(item.quantity);
+        const rawQuantity = Number(item.quantity);
+    const quantity = roundToDecimals(rawQuantity, 3);
 
         await prisma.inventoryItem.update({
           where: { id: existing.id },

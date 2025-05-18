@@ -3,6 +3,7 @@ import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { ROLES } from '@/lib/auth/roles';
+import { roundToDecimals } from '@/lib/utils/round';
 
 export async function POST(
   req: NextRequest,
@@ -15,6 +16,8 @@ export async function POST(
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: 'Cantidad inválida' }, { status: 400 });
     }
+
+    const roundedAmount = roundToDecimals(amount, 3);
 
     const session = await getServerSession(authOptions);
 
@@ -34,7 +37,7 @@ export async function POST(
       data: {
         itemId: id,
         type: 'CARGA_INDIVIDUAL',
-        amount,
+        amount:roundedAmount,
         price: item.price,
         userId: session?.user?.id || null,
       },
@@ -42,7 +45,7 @@ export async function POST(
 
     await prisma.inventoryItem.update({
       where: { id },
-      data: { quantity: item.quantity + amount },
+      data: { quantity: item.quantity + roundedAmount },
     });
 
     return NextResponse.json({ success: true });

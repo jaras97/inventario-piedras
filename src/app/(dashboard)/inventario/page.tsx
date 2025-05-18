@@ -15,6 +15,7 @@ import { useSession } from 'next-auth/react';
 import { hasWriteAccess } from '@/lib/auth/roles';
 import GroupSellModal from '@/components/ui/GroupSellModal';
 import EditProductModal from '@/components/inventory/EditProductModal';
+import { formatNumber } from '@/lib/utils/format';
 
 type Inventory = {
   id: string;
@@ -129,14 +130,15 @@ export default function InventarioPage() {
       header: 'Unidad',
       cell: (info) => info.row.original.unit.name,
     },
-    { accessorKey: 'quantity', header: 'Cantidad' },
     {
-      accessorKey: 'price',
+      header: 'Cantidad',
+      accessorKey: 'quantity',
+      cell: ({ getValue }) => formatNumber(getValue<number>(), 3),
+    },
+    {
       header: 'Precio',
-      cell: (info) =>
-        `$${info.row.original?.price?.toLocaleString(undefined, {
-          minimumFractionDigits: 0,
-        })}`,
+      accessorKey: 'price',
+      cell: ({ getValue }) => formatNumber(getValue<number>(), 3),
     },
   ];
 

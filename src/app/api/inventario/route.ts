@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
 import { Prisma } from '@prisma/client';
+import { roundToDecimals } from '@/lib/utils/round';
 
 export async function GET(req: NextRequest) {
   try {
@@ -14,9 +15,10 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get('category') || undefined;
     const unit = searchParams.get('unit') || undefined;
     const code = searchParams.get('code') || undefined;
-    const quantity = searchParams.get('quantity')
-      ? parseFloat(searchParams.get('quantity')!)
-      : undefined;
+const quantityRaw = searchParams.get('quantity');
+const quantity = quantityRaw
+  ? roundToDecimals(parseFloat(quantityRaw), 3)
+  : undefined;
 
     const where: Prisma.InventoryItemWhereInput = {
       ...(name && {
@@ -80,8 +82,8 @@ data: items.map((item) => ({
   subcategoryCode: item.subcategoryCode
     ? { id: item.subcategoryCode.id, code: item.subcategoryCode.code }
     : null,
-  quantity: item.quantity,
-  price: item.price,
+  quantity: roundToDecimals(item.quantity, 3),
+  price:  roundToDecimals(item.price, 3),
 })),
       total,
       page,
