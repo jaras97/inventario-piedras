@@ -1,6 +1,7 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { Geist, Geist_Mono } from 'next/font/google';
+import { Metadata } from 'next';
+import Head from 'next/head';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -15,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Inventario piedras',
   description:
-    'aplicativo interno para manejo de inventario de piedras y metales',
+    'Aplicativo interno para manejo de inventario de piedras y metales',
 };
 
 export default function RootLayout({
@@ -24,7 +25,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en'>
+    <html lang='en' className='notranslate' translate='no'>
+      <Head>
+        <meta name='google' content='notranslate' />
+        <meta name='robots' content='notranslate'></meta>
+      </Head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
