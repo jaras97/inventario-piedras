@@ -3,7 +3,7 @@ import prisma from '@/lib/db/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { hasWriteAccess } from '@/lib/auth/roles';
-import { TransactionType } from '@prisma/client';
+import { TransactionType, PaymentMethod } from '@prisma/client';
 import { roundToDecimals } from '@/lib/utils/round';
 
 export async function POST(
@@ -12,23 +12,45 @@ export async function POST(
 ) {
   try {
     const { id } = await context.params;
-    const { amount, price } = await req.json();
+    const body = await req.json();
 
-    if (!amount || amount <= 0 || !price || price <= 0) {
+    const { amount, price, paymentMethod, clientName, notes } = body;
+
+    // Validaciones básicas
+    if (!amount || amount <= 0 || !price || price <= 0 || !paymentMethod) {
       return NextResponse.json(
-        { error: 'Cantidad o precio inválido' },
+        { error: 'Datos inválidos o incompletos' },
+        { status: 400 }
+      );
+    }
+
+    // Validar método de pago contra enum
+    const validMethods: PaymentMethod[] = [
+      'EFECTIVO',
+      'TRANSFERENCIA',
+      'NEQUI',
+      'DAVIPLATA',
+      'TARJETA',
+      'OTRO',
+    ];
+
+    if (!validMethods.includes(paymentMethod)) {
+      return NextResponse.json(
+        { error: 'Método de pago inválido' },
         { status: 400 }
       );
     }
 
     const roundedAmount = roundToDecimals(amount, 3);
-const roundedPrice = roundToDecimals(price, 3);
+    const roundedPrice = roundToDecimals(price, 3);
 
+    // Validar existencia del item
     const item = await prisma.inventoryItem.findUnique({ where: { id } });
     if (!item) {
       return NextResponse.json({ error: 'Item no encontrado' }, { status: 404 });
     }
 
+    // Validar stock disponible
     if (item.quantity < amount) {
       return NextResponse.json(
         { error: 'No hay suficiente cantidad en inventario' },
@@ -36,9 +58,9 @@ const roundedPrice = roundToDecimals(price, 3);
       );
     }
 
+    // Validar sesión y permisos
     const session = await getServerSession(authOptions);
     const role = session?.user?.role || '';
-
     if (!hasWriteAccess(role)) {
       return NextResponse.json(
         { error: 'No autorizado para realizar ventas' },
@@ -46,16 +68,29 @@ const roundedPrice = roundToDecimals(price, 3);
       );
     }
 
-    await prisma.inventoryTransaction.create({
+    // 1. Crear grupo de transacción
+    const group = await prisma.inventoryTransactionGroup.create({
       data: {
-        itemId: id,
-        type: TransactionType.VENTA_INDIVIDUAL,
-        amount:roundedAmount,
-        price:roundedPrice,
+        paymentMethod,
+        clientName: clientName || null,
+        notes: notes || null,
         userId: session?.user.id,
       },
     });
 
+    // 2. Crear transacción asociada al grupo
+    await prisma.inventoryTransaction.create({
+      data: {
+        itemId: id,
+        type: TransactionType.VENTA_INDIVIDUAL,
+        amount: roundedAmount,
+        price: roundedPrice,
+        groupId: group.id,
+        userId: session?.user.id,
+      },
+    });
+
+    // 3. Actualizar inventario
     await prisma.inventoryItem.update({
       where: { id },
       data: {

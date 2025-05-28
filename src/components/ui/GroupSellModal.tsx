@@ -15,6 +15,14 @@ import {
 import ManualProductTable from '@/components/ui/ManualProductTable';
 import { Button } from '@/components/ui/button';
 
+type PaymentMethod =
+  | 'EFECTIVO'
+  | 'TRANSFERENCIA'
+  | 'NEQUI'
+  | 'DAVIPLATA'
+  | 'TARJETA'
+  | 'OTRO';
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -25,6 +33,9 @@ export default function GroupSellModal({ open, onClose, onSuccess }: Props) {
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [manualProducts, setManualProducts] = useState<ManualProduct[]>([]);
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('EFECTIVO');
+  const [clientName, setClientName] = useState('');
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (!open) return;
@@ -69,7 +80,12 @@ export default function GroupSellModal({ open, onClose, onSuccess }: Props) {
       const res = await fetch('/api/inventario/venta-grupal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: payload }),
+        body: JSON.stringify({
+          items: payload,
+          paymentMethod,
+          clientName: clientName || null,
+          notes: notes || null,
+        }),
       });
 
       if (!res.ok) throw new Error('Error al procesar venta');
@@ -110,6 +126,54 @@ export default function GroupSellModal({ open, onClose, onSuccess }: Props) {
                 products={products}
                 mode='sell'
               />
+
+              <div className='grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6'>
+                <div>
+                  <label className='text-sm font-medium text-gray-700'>
+                    Método de pago
+                  </label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) =>
+                      setPaymentMethod(e.target.value as PaymentMethod)
+                    }
+                    className='mt-1 w-full border rounded px-3 py-2 text-sm'
+                  >
+                    <option value='EFECTIVO'>Efectivo</option>
+                    <option value='TRANSFERENCIA'>Transferencia</option>
+                    <option value='NEQUI'>Nequi</option>
+                    <option value='DAVIPLATA'>Daviplata</option>
+                    <option value='TARJETA'>Tarjeta</option>
+                    <option value='OTRO'>Otro</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className='text-sm font-medium text-gray-700'>
+                    Cliente (opcional)
+                  </label>
+                  <input
+                    type='text'
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    className='mt-1 w-full border rounded px-3 py-2 text-sm'
+                    placeholder='Nombre del cliente'
+                  />
+                </div>
+
+                <div>
+                  <label className='text-sm font-medium text-gray-700'>
+                    Notas (opcional)
+                  </label>
+                  <input
+                    type='text'
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className='mt-1 w-full border rounded px-3 py-2 text-sm'
+                    placeholder='Comentarios o detalles'
+                  />
+                </div>
+              </div>
 
               <div className='flex justify-between items-center mt-6 flex-col sm:flex-row gap-2 sm:gap-0'>
                 <p className='text-sm font-medium text-gray-700'>

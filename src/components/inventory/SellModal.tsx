@@ -17,6 +17,15 @@ import NumericInput from '../components/NumericInput';
 type SellForm = {
   amount: number;
   price: number;
+  paymentMethod:
+    | 'EFECTIVO'
+    | 'TRANSFERENCIA'
+    | 'NEQUI'
+    | 'DAVIPLATA'
+    | 'TARJETA'
+    | 'OTRO';
+  clientName?: string;
+  notes?: string;
 };
 
 type Props = {
@@ -46,6 +55,7 @@ export default function SellModal({
     watch,
     reset,
     setValue,
+    register,
   } = useForm<SellForm>({
     resolver: zodResolver(
       useMemo(() => {
@@ -58,16 +68,30 @@ export default function SellModal({
                   .positive('Debe ser mayor a cero')
               : z.number().positive('Debe ser mayor a cero'),
           price: z.number().positive('Debe ser mayor a cero'),
+          paymentMethod: z.enum([
+            'EFECTIVO',
+            'TRANSFERENCIA',
+            'NEQUI',
+            'DAVIPLATA',
+            'TARJETA',
+            'OTRO',
+          ]),
+          clientName: z.string().optional(),
+          notes: z.string().optional(),
         });
       }, [unitType]),
     ),
-    defaultValues: { amount: 0, price: 0 },
+    defaultValues: {
+      amount: 0,
+      price: 0,
+      paymentMethod: 'EFECTIVO',
+      clientName: '',
+      notes: '',
+    },
   });
 
   useEffect(() => {
-    if (open) {
-      setAdjusted(false);
-    }
+    if (open) setAdjusted(false);
   }, [open]);
 
   useEffect(() => {
@@ -89,9 +113,7 @@ export default function SellModal({
         if (!itemJson) throw new Error('No se pudo obtener el producto');
 
         setUnitType(unitJson.valueType || 'DECIMAL');
-        if (itemJson.price) {
-          setValue('price', itemJson.price);
-        }
+        if (itemJson.price) setValue('price', itemJson.price);
         if (itemJson.quantity !== undefined) setStock(itemJson.quantity);
       } catch (error) {
         console.error('Error obteniendo datos del producto:', error);
@@ -110,6 +132,7 @@ export default function SellModal({
       setAdjusted(true);
       return;
     }
+
     setLoading(true);
 
     const res = await fetch(`/api/inventario/${itemId}/salida`, {
@@ -170,6 +193,52 @@ export default function SellModal({
                   onChange={(val) => setValue('price', val)}
                   allowDecimal={true}
                 />
+
+                <div>
+                  <label className='text-sm font-medium text-gray-700'>
+                    Método de pago
+                  </label>
+                  <select
+                    {...register('paymentMethod')}
+                    className='mt-1 w-full border rounded px-3 py-2 text-sm'
+                  >
+                    <option value='EFECTIVO'>Efectivo</option>
+                    <option value='TRANSFERENCIA'>Transferencia</option>
+                    <option value='NEQUI'>Nequi</option>
+                    <option value='DAVIPLATA'>Daviplata</option>
+                    <option value='TARJETA'>Tarjeta</option>
+                    <option value='OTRO'>Otro</option>
+                  </select>
+                  {errors.paymentMethod && (
+                    <p className='text-sm text-red-600 mt-1'>
+                      {errors.paymentMethod.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className='text-sm font-medium text-gray-700'>
+                    Cliente (opcional)
+                  </label>
+                  <input
+                    type='text'
+                    {...register('clientName')}
+                    className='mt-1 w-full border rounded px-3 py-2 text-sm'
+                    placeholder='Nombre del cliente'
+                  />
+                </div>
+
+                <div>
+                  <label className='text-sm font-medium text-gray-700'>
+                    Notas (opcional)
+                  </label>
+                  <textarea
+                    {...register('notes')}
+                    className='mt-1 w-full border rounded px-3 py-2 text-sm resize-none'
+                    rows={3}
+                    placeholder='Comentarios o detalles adicionales'
+                  />
+                </div>
 
                 <div className='space-y-1'>
                   <p className='text-sm font-medium text-gray-700'>

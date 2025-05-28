@@ -31,6 +31,9 @@ type Reporte = {
   precioUnit: number;
   total: number;
   usuario: string;
+  metodoPago: string;
+  cliente: string;
+  notas: string;
 };
 
 type ContableResumen = {
@@ -38,6 +41,8 @@ type ContableResumen = {
   totalUnidades: number;
   transacciones: number;
 };
+
+type MetodoResumen = Record<string, number>;
 
 type ExportBody = {
   from?: string;
@@ -70,6 +75,9 @@ export default function ReportesPage() {
   const [data, setData] = useState<Reporte[]>([]);
   const [contableResumen, setContableResumen] =
     useState<ContableResumen | null>(null);
+  const [metodoResumen, setMetodoResumen] = useState<MetodoResumen | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
@@ -94,6 +102,9 @@ export default function ReportesPage() {
       cell: ({ getValue }) => `$${formatNumber(getValue<number>(), 3)}`,
     },
     { header: 'Usuario', accessorKey: 'usuario' },
+    { header: 'Método de pago', accessorKey: 'metodoPago' },
+    { header: 'Cliente', accessorKey: 'cliente' },
+    { header: 'Notas', accessorKey: 'notas' },
   ];
 
   const getDateRange = () => {
@@ -105,8 +116,8 @@ export default function ReportesPage() {
       const base = DateTime.fromISO(filters.from, { zone });
 
       return {
-        from: base.startOf('day').toUTC().toISO(), // 2025-05-16T05:00:00.000Z
-        to: base.endOf('day').toUTC().toISO(), // 2025-05-17T04:59:59.999Z
+        from: base.startOf('day').toUTC().toISO(),
+        to: base.endOf('day').toUTC().toISO(),
       };
     }
 
@@ -157,6 +168,7 @@ export default function ReportesPage() {
         transacciones: json.transacciones,
       });
 
+      setMetodoResumen(json.resumenPorMetodoPago || {});
       setData(json.data || []);
       setTotal(json.transacciones || 0);
     }
@@ -219,6 +231,7 @@ export default function ReportesPage() {
           onChange={(opt) => {
             setFilters({ ...filters, reportKind: opt.value as ReportKind });
             setContableResumen(null);
+            setMetodoResumen(null);
             setData([]);
           }}
         />
@@ -299,6 +312,34 @@ export default function ReportesPage() {
               },
             ]}
           />
+
+          {metodoResumen && (
+            <div className='mb-6'>
+              <h2 className='text-lg font-semibold mb-2'>
+                Ventas por método de pago
+              </h2>
+              <div className='overflow-x-auto rounded-lg shadow-md'>
+                <table className='min-w-full text-sm border border-gray-200'>
+                  <thead className='bg-gray-100 text-left'>
+                    <tr>
+                      <th className='px-4 py-2 border-b'>Método de pago</th>
+                      <th className='px-4 py-2 border-b'>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(metodoResumen).map(([metodo, valor]) => (
+                      <tr key={metodo} className='bg-white border-b'>
+                        <td className='px-4 py-2'>{metodo}</td>
+                        <td className='px-4 py-2 font-medium'>
+                          ${formatNumber(valor, 3)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <DynamicTable
             title='Detalle de ventas'

@@ -120,18 +120,32 @@ model InventoryItem {
   @@unique([name, categoryId, unitId])
 }
 
+enum PaymentMethod {
+  EFECTIVO
+  TRANSFERENCIA
+  NEQUI
+  DAVIPLATA
+  TARJETA
+  OTRO
+}
+
 model InventoryTransaction {
   id        String                     @id @default(cuid())
   itemId    String
   item      InventoryItem              @relation(fields: [itemId], references: [id], onDelete: Cascade)
   type      TransactionType
   amount    Float
-  price     Float                      @default(0) // solo en ventas
+  price     Float                      @default(0)
   groupId   String?
   group     InventoryTransactionGroup? @relation(fields: [groupId], references: [id])
   userId    String?
   User      User?                      @relation(fields: [userId], references: [id])
   createdAt DateTime                   @default(now())
+
+  // Nuevos campos:
+  paymentMethod PaymentMethod? // solo para ventas
+  clientName    String?
+  notes         String?        @db.Text
 }
 
 model InventoryTransactionGroup {
@@ -140,6 +154,10 @@ model InventoryTransactionGroup {
   userId       String?
   user         User?                  @relation(fields: [userId], references: [id])
   transactions InventoryTransaction[]
+
+  paymentMethod PaymentMethod?
+  clientName    String? // Opcional
+  notes         String? // Opcional
 }
 
 enum TransactionType {

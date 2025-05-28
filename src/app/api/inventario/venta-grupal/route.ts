@@ -1,10 +1,9 @@
-// app/api/inventario/venta-grupal/route.ts
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import prisma from '@/lib/db/prisma';
 import { hasWriteAccess } from '@/lib/auth/roles';
-import { TransactionType } from '@prisma/client';
+import { TransactionType, PaymentMethod } from '@prisma/client';
 
 type GroupSellItem = {
   itemId: string;
@@ -19,10 +18,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'No autorizado' }, { status: 403 });
     }
 
-    const { items } = await req.json();
+    const body = await req.json();
+    const { items, paymentMethod, clientName, notes } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ message: 'No hay productos' }, { status: 400 });
+    }
+
+    if (!paymentMethod || typeof paymentMethod !== 'string') {
+      return NextResponse.json({ message: 'Método de pago requerido' }, { status: 400 });
     }
 
     const userId = session.user.id;
@@ -30,6 +34,9 @@ export async function POST(req: Request) {
     const group = await prisma.inventoryTransactionGroup.create({
       data: {
         userId,
+        paymentMethod: paymentMethod as PaymentMethod,
+        clientName: clientName ?? null,
+        notes: notes ?? null,
         transactions: {
           create: await Promise.all(
             items.map(async (item: GroupSellItem) => {

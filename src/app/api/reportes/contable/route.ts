@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
     const from = searchParams.get('from');
     const to = searchParams.get('to');
-    const code = searchParams.get('code')?.toUpperCase(); // código opcional
+    const code = searchParams.get('code')?.toUpperCase();
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '10', 10);
     const skip = (page - 1) * limit;
@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
         include: {
           item: true,
           User: true,
+          group: true,
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -61,18 +62,29 @@ export async function GET(req: NextRequest) {
 
     const totalUnidades = ventas.reduce((sum, v) => sum + v.amount, 0);
 
+    const resumenPorMetodoPago: Record<string, number> = {};
+    ventas.forEach((v) => {
+      const metodo = v.group?.paymentMethod ?? 'N/A';
+      const total = (v.price ?? 0) * v.amount;
+      if (!resumenPorMetodoPago[metodo]) resumenPorMetodoPago[metodo] = 0;
+      resumenPorMetodoPago[metodo] += total;
+    });
+
     return NextResponse.json({
       totalVentas,
       totalUnidades,
       transacciones: totalCount,
-
-data: ventas.map((v) => ({
-  fecha: moment(v.createdAt).tz(TIMEZONE).format('YYYY-MM-DD HH:mm'),
+      resumenPorMetodoPago,
+      data: ventas.map((v) => ({
+        fecha: moment(v.createdAt).tz(TIMEZONE).format('YYYY-MM-DD HH:mm'),
         producto: v.item?.name ?? '',
         cantidad: v.amount,
         precioUnit: v.price ?? 0,
         total: v.amount * (v.price ?? 0),
         usuario: v.User?.name ?? 'Sistema',
+        metodoPago: v.group?.paymentMethod ?? 'N/A',
+        cliente: v.group?.clientName ?? 'N/A',
+        notas: v.group?.notes ?? '—',
       })),
     });
   } catch (err) {

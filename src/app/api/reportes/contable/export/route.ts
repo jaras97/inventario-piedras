@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       include: {
         item: true,
         User: true,
+        group: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -50,32 +51,54 @@ export async function POST(req: NextRequest) {
       { header: 'Cantidad', key: 'cantidad', width: 15 },
       { header: 'Precio Unitario', key: 'precioUnit', width: 20 },
       { header: 'Total', key: 'total', width: 20 },
+      { header: 'Método de pago', key: 'metodoPago', width: 20 },
+      { header: 'Cliente', key: 'cliente', width: 25 },
+      { header: 'Notas', key: 'notas', width: 30 },
       { header: 'Usuario', key: 'usuario', width: 25 },
     ];
 
     const timezone = 'America/Bogota';
+    const metodoMap: Record<string, number> = {};
 
     ventas.forEach((tx) => {
-      const total = tx.price ? tx.price * tx.amount : '';
+      const total = tx.price ? tx.price * tx.amount : 0;
       const fechaLocal = moment(tx.createdAt).tz(timezone).format('DD/MM/YYYY HH:mm');
+      const metodo = tx.group?.paymentMethod ?? 'N/A';
+
+      // Sumar total por método de pago
+      metodoMap[metodo] = (metodoMap[metodo] || 0) + total;
+
       sheet.addRow({
         fecha: fechaLocal,
         producto: tx.item?.name ?? '',
         cantidad: tx.amount,
         precioUnit: tx.price ?? '',
         total,
+        metodoPago: metodo,
+        cliente: tx.group?.clientName ?? 'N/A',
+        notas: tx.group?.notes ?? '',
         usuario: tx.User?.name ?? 'Sistema',
       });
     });
 
-    // Agregar resumen
+    // Agregar resumen general
     const totalVentas = ventas.reduce((sum, v) => sum + (v.price ?? 0) * v.amount, 0);
     const totalUnidades = ventas.reduce((sum, v) => sum + v.amount, 0);
 
     sheet.addRow([]);
-    sheet.addRow(['', '', '', 'Total vendido', totalVentas]);
-    sheet.addRow(['', '', '', 'Total unidades', totalUnidades]);
-    sheet.addRow(['', '', '', 'Transacciones', ventas.length]);
+    sheet.addRow(['Resumen General']);
+    sheet.addRow(['Total vendido', totalVentas]);
+    sheet.addRow(['Total unidades', totalUnidades]);
+    sheet.addRow(['Transacciones', ventas.length]);
+
+    // Agregar resumen por método de pago
+    sheet.addRow([]);
+    sheet.addRow(['Resumen por método de pago']);
+    sheet.addRow(['Método de pago', 'Total']);
+
+    Object.entries(metodoMap).forEach(([metodo, total]) => {
+      sheet.addRow([metodo, total]);
+    });
 
     const buffer = await workbook.xlsx.writeBuffer();
 
