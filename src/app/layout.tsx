@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   title: 'Inventario piedras',
   description:
     'Aplicativo interno para manejo de inventario de piedras y metales',
+  icons: {
+    icon: '/logo.svg',
+  },
 };
 
 export default function RootLayout({

@@ -7,6 +7,7 @@ import { getSession, signIn, signOut, useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -72,40 +73,51 @@ export default function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className='bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto border border-gray-200'
+      className='bg-blue-900 p-8 rounded-lg shadow-xl w-full max-w-md mx-auto border border-blue-700'
     >
-      <h1 className='text-2xl font-bold text-center text-blue-600 mb-6'>
+      <div className='flex justify-center mb-6'>
+        <Image
+          src='/logo.svg'
+          alt='Metales y Brillantes'
+          width={140}
+          height={80}
+          className='object-contain'
+          priority
+        />
+      </div>
+
+      <h1 className='text-2xl font-bold text-center text-white mb-6'>
         Iniciar sesión
       </h1>
 
       <div className='mb-4'>
-        <label className='block mb-1 font-medium text-gray-700'>Email</label>
+        <label className='block mb-1 font-medium text-white'>Email</label>
         <input
           type='email'
           {...register('email')}
-          className='w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+          className='w-full border border-blue-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-white bg-transparent placeholder:text-blue-100'
+          placeholder='correo@ejemplo.com'
         />
         {errors.email && (
-          <p className='text-red-500 text-sm mt-1'>{errors.email.message}</p>
+          <p className='text-red-300 text-sm mt-1'>{errors.email.message}</p>
         )}
       </div>
 
       <div className='mb-4'>
-        <label className='block mb-1 font-medium text-gray-700'>
-          Contraseña
-        </label>
+        <label className='block mb-1 font-medium text-white'>Contraseña</label>
         <input
           type='password'
           {...register('password')}
-          className='w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+          className='w-full border border-blue-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-white bg-transparent placeholder:text-blue-100'
+          placeholder='********'
         />
         {errors.password && (
-          <p className='text-red-500 text-sm mt-1'>{errors.password.message}</p>
+          <p className='text-red-300 text-sm mt-1'>{errors.password.message}</p>
         )}
       </div>
 
       {error && (
-        <p className='text-red-500 text-sm mb-4 text-center'>{error}</p>
+        <p className='text-red-300 text-sm mb-4 text-center'>{error}</p>
       )}
 
       <button
