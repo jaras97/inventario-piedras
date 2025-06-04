@@ -31,7 +31,7 @@ export default function SidebarLayout() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-gray-50 text-gray-800 w-64 flex flex-col justify-between p-6 shadow-md z-50
+        className={`bg-blue-900 text-gray-800 w-64 flex flex-col justify-between p-6 shadow-md z-50
         fixed inset-y-0 left-0 transform transition-transform duration-300 ease-in-out
         ${open ? 'translate-x-0' : '-translate-x-full'} 
         lg:translate-x-0 lg:relative lg:inset-auto lg:h-screen`}
@@ -126,10 +126,10 @@ function SidebarLink({
   return (
     <Link
       href={href}
-      className={`block px-2 py-1 rounded transition text-sm ${
+      className={`block px-3 py-2 rounded-md transition text-sm font-medium ${
         isActive
-          ? 'bg-blue-100 text-blue-600 font-semibold'
-          : 'hover:bg-gray-100'
+          ? 'bg-blue-700 text-white shadow-sm'
+          : 'text-white/80 hover:bg-blue-800 hover:text-white'
       }`}
     >
       {children}
