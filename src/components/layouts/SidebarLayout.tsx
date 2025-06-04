@@ -37,16 +37,15 @@ export default function SidebarLayout() {
         lg:translate-x-0 lg:relative lg:inset-auto lg:h-screen`}
       >
         <div>
-          <div className='flex flex-col items-center gap-3'>
+          <div className='flex items-center justify-center mb-6 px-4 py-6 border-b border-gray-200'>
             <Image
               src='/logo.svg'
-              alt='Logo Empresa'
-              width={100}
-              height={100}
-              className='h-48 w-48 object-contain'
+              alt='Metales y Brillantes'
+              width={140}
+              height={80}
+              className='object-contain'
               priority
             />
-            {/* <span className='text-xl font-bold text-blue-600'>Inventario</span> */}
           </div>
           <nav className='flex flex-col gap-3'>
             <SidebarLink href='/dashboard' currentPath={pathname}>
