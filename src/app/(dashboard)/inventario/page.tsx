@@ -16,6 +16,8 @@ import { hasWriteAccess } from '@/lib/auth/roles';
 import GroupSellModal from '@/components/ui/GroupSellModal';
 import EditProductModal from '@/components/inventory/EditProductModal';
 import { formatNumber } from '@/lib/utils/format';
+import { useMessageStore } from '@/store/messageStore';
+import Message from '@/components/ui/Message';
 
 type Inventory = {
   id: string;
@@ -34,6 +36,8 @@ export default function InventarioPage() {
   const { data: session } = useSession();
   const role = session?.user?.role ?? '';
   const isAdmin = hasWriteAccess(role);
+
+  const { setMessage } = useMessageStore.getState();
 
   const [groupSellOpen, setGroupSellOpen] = useState(false);
   const [data, setData] = useState<Inventory[]>([]);
@@ -86,6 +90,7 @@ export default function InventarioPage() {
       setTotal(json.total);
     } catch (err) {
       console.error('Error al cargar inventario', err);
+      setMessage('error', 'Error al cargar inventario');
     } finally {
       setLoading(false);
     }
@@ -107,6 +112,7 @@ export default function InventarioPage() {
       setUnits(json.units || []);
     } catch (err) {
       console.error('Error al cargar metadata de inventario', err);
+      setMessage('error', 'Error al cargar metadata');
     }
   };
 
@@ -279,6 +285,7 @@ export default function InventarioPage() {
         product={editingProduct}
         types={categories}
       />
+      <Message />
     </div>
   );
 }

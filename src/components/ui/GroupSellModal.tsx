@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/ManualProductTable';
 import ManualProductTable from '@/components/ui/ManualProductTable';
 import { Button } from '@/components/ui/button';
+import { useMessageStore } from '@/store/messageStore';
 
 type PaymentMethod =
   | 'EFECTIVO'
@@ -36,6 +37,8 @@ export default function GroupSellModal({ open, onClose, onSuccess }: Props) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('EFECTIVO');
   const [clientName, setClientName] = useState('');
   const [notes, setNotes] = useState('');
+
+  const { setMessage } = useMessageStore();
 
   useEffect(() => {
     if (!open) return;
@@ -64,7 +67,7 @@ export default function GroupSellModal({ open, onClose, onSuccess }: Props) {
       );
 
       if (valid.length === 0) {
-        alert('Debes agregar al menos un producto válido');
+        setMessage('error', 'Debes agregar al menos un producto válido');
         return;
       }
 
@@ -89,11 +92,11 @@ export default function GroupSellModal({ open, onClose, onSuccess }: Props) {
       });
 
       if (!res.ok) throw new Error('Error al procesar venta');
-
+      setMessage('success', 'Venta grupal registrada exitosamente');
       onSuccess();
       onClose();
     } catch (error) {
-      alert('Error al procesar venta grupal');
+      setMessage('error', 'Error al procesar venta grupal');
       console.error(error);
     } finally {
       setLoading(false);

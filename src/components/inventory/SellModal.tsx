@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import NumericInput from '../components/NumericInput';
+import { useMessageStore } from '@/store/messageStore';
 
 type SellForm = {
   amount: number;
@@ -48,6 +49,8 @@ export default function SellModal({
   const [errorMessage, setErrorMessage] = useState('');
   const [stock, setStock] = useState<number | null>(null);
   const [adjusted, setAdjusted] = useState(false);
+
+  const { setMessage } = useMessageStore();
 
   const {
     handleSubmit,
@@ -144,11 +147,15 @@ export default function SellModal({
     setLoading(false);
 
     if (res.ok) {
+      setMessage('success', 'Venta registrada exitosamente');
       reset();
       onSuccess();
       onClose();
     } else {
       const err = await res.json();
+
+      const errorMsg = err?.error || 'Error al vender inventario';
+      setMessage('error', errorMsg);
       setErrorMessage(err?.error || 'Error al vender inventario');
     }
   };

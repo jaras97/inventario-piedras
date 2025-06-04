@@ -141,17 +141,28 @@ export default function InventoryFilters({
       {fields.includes('code') && (
         <select
           name='code'
-          className='border border-gray-300 rounded px-3 py-2 text-sm w-full'
+          className={`border px-3 py-2 text-sm w-full rounded ${
+            !filters.category
+              ? 'bg-gray-100 cursor-not-allowed text-gray-400'
+              : 'border-gray-300'
+          }`}
           onChange={handleInputChange}
+          disabled={!filters.category}
+          value={filters.code ?? ''}
         >
-          <option value=''>Subcategoría</option>
-          {types
-            .flatMap((t) => t.codes || [])
-            .map((c) => (
-              <option key={c.id} value={c.code}>
-                {c.code}
-              </option>
-            ))}
+          <option value=''>
+            {filters.category
+              ? 'Subcategoría'
+              : 'Seleccione una categoría primero'}
+          </option>
+          {filters.category &&
+            types
+              .find((t) => t.id === filters.category)
+              ?.codes?.map((c) => (
+                <option key={c.id} value={c.code}>
+                  {c.code}
+                </option>
+              ))}
         </select>
       )}
 

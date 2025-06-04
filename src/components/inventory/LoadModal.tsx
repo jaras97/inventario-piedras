@@ -14,6 +14,7 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import NumericInput from '@/components/components/NumericInput';
 import { InventoryItem } from '@/types/inventory';
+import { useMessageStore } from '@/store/messageStore';
 
 type LoadForm = {
   amount: number;
@@ -28,6 +29,8 @@ type Props = {
 
 export default function LoadModal({ item, open, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
+
+  const { setMessage } = useMessageStore();
 
   const schema = useMemo(() => {
     return z.object({
@@ -64,11 +67,13 @@ export default function LoadModal({ item, open, onClose, onSuccess }: Props) {
 
     setLoading(false);
     if (res.ok) {
+      setMessage('success', 'Inventario cargado exitosamente');
       reset();
       onSuccess();
       onClose();
     } else {
-      alert('Error al cargar inventario');
+      const err = await res.json();
+      setMessage('error', err?.error || 'Error al cargar inventario');
     }
   };
 

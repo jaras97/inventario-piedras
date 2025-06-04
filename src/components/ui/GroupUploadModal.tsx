@@ -15,6 +15,7 @@ import ManualProductTable, {
   ProductOption,
 } from '@/components/ui/ManualProductTable';
 import { Button } from '@/components/ui/button';
+import { useMessageStore } from '@/store/messageStore';
 
 const tabs = [
   { key: 'file', label: 'Carga desde Archivo', icon: Upload },
@@ -42,6 +43,8 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<ProductOption[]>([]);
 
+  const { setMessage } = useMessageStore();
+
   useEffect(() => {
     if (!open) return;
 
@@ -66,7 +69,7 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
           setParsedData(results.data);
         },
         error: (error: Error) => {
-          alert('Error leyendo el archivo');
+          setMessage('error', 'Error leyendo el archivo');
           console.error(error);
         },
       });
@@ -82,7 +85,7 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
 
       if (activeTab === 'file') {
         if (parsedData.length === 0) {
-          alert('No hay datos válidos en el archivo');
+          setMessage('error', 'No hay datos válidos en el archivo');
           return;
         }
 
@@ -109,7 +112,7 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
           });
 
         if (valid.length === 0) {
-          alert('Debes agregar al menos un producto válido');
+          setMessage('error', 'Debes agregar al menos un producto válido');
           return;
         }
 
@@ -123,11 +126,11 @@ export default function GroupUploadModal({ open, onClose, onSuccess }: Props) {
       });
 
       if (!res.ok) throw new Error('Error al enviar los datos');
-
+      setMessage('success', 'Productos cargados correctamente');
       onSuccess();
       onClose();
     } catch (error) {
-      alert('Error al subir productos');
+      setMessage('error', 'Error al subir productos');
       console.error(error);
     } finally {
       setLoading(false);

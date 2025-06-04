@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { LabeledInput } from '@/components/ui/LabeledInput';
 import NumericInput from '@/components/components/NumericInput';
+import { useMessageStore } from '@/store/messageStore';
 
 type Option = {
   id: string;
@@ -47,6 +48,8 @@ export default function CreateProductModal({
   const [codes, setCodes] = useState<Option[]>([]);
   const [unitType, setUnitType] = useState<'INTEGER' | 'DECIMAL'>('DECIMAL');
   const [loading, setLoading] = useState(false);
+
+  const { setMessage } = useMessageStore();
 
   const schema = useMemo(() => {
     return z.object({
@@ -133,11 +136,13 @@ export default function CreateProductModal({
     });
     setLoading(false);
     if (res.ok) {
+      setMessage('success', 'Producto creado exitosamente');
       reset();
       onSuccess();
       onClose();
     } else {
-      alert('Error al crear producto');
+      const err = await res.json();
+      setMessage('error', err?.error || 'Error al crear producto');
     }
   };
 

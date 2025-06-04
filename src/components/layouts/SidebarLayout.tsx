@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
+import Image from 'next/image';
 
 export default function SidebarLayout() {
   const [open, setOpen] = useState(false);
@@ -36,7 +37,17 @@ export default function SidebarLayout() {
         lg:translate-x-0 lg:relative lg:inset-auto lg:h-screen`}
       >
         <div>
-          <h2 className='text-2xl font-bold mb-8 text-blue-600'>Inventario</h2>
+          <div className='flex flex-col items-center gap-3'>
+            <Image
+              src='/logo.svg'
+              alt='Logo Empresa'
+              width={100}
+              height={100}
+              className='h-48 w-48 object-contain'
+              priority
+            />
+            {/* <span className='text-xl font-bold text-blue-600'>Inventario</span> */}
+          </div>
           <nav className='flex flex-col gap-3'>
             <SidebarLink href='/dashboard' currentPath={pathname}>
               Dashboard

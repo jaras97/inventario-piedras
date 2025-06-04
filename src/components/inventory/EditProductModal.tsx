@@ -12,6 +12,7 @@ import { LabeledInput } from '@/components/ui/LabeledInput';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/button';
 import NumericInput from '@/components/components/NumericInput';
+import { useMessageStore } from '@/store/messageStore';
 
 interface SelectOption {
   label: string;
@@ -64,6 +65,8 @@ export default function EditProductModal({
   const [codes, setCodes] = useState<SelectOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { setMessage } = useMessageStore();
 
   const categoryOptions = useMemo(
     () => types.map((t) => ({ label: t.name, value: t.id })),
@@ -146,10 +149,11 @@ export default function EditProductModal({
 
     setLoading(false);
     if (res.ok) {
+      setMessage('success', 'Producto actualizado correctamente');
       onSuccess();
       onClose();
     } else {
-      alert('Error al actualizar producto');
+      setMessage('error', 'Error al actualizar producto');
     }
   };
 
