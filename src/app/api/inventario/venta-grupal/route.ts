@@ -44,8 +44,14 @@ export async function POST(req: Request) {
                 where: { id: item.itemId },
               });
 
-              if (!inventoryItem || inventoryItem.quantity < item.amount) {
-                throw new Error(`Producto insuficiente o inexistente: ${item.itemId}`);
+              // 👇 Aquí el cambio: Decimal -> number para la comparación
+              if (
+                !inventoryItem ||
+                Number(inventoryItem.quantity) < item.amount
+              ) {
+                throw new Error(
+                  `Producto insuficiente o inexistente: ${item.itemId}`
+                );
               }
 
               await prisma.inventoryItem.update({
