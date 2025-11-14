@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function GET(
   req: NextRequest,
@@ -30,14 +31,24 @@ export async function GET(
     }
 
     
+  const amountDecimal = new Prisma.Decimal(transaction.amount ?? 0); // en schema es NOT NULL, pero por si acaso
+  const priceDecimal =
+    transaction.price == null ? null : new Prisma.Decimal(transaction.price); // puede ser null
+
+  const quantity = amountDecimal.toNumber();
+  const price = priceDecimal?.toNumber();
+  const total = priceDecimal
+    ? amountDecimal.mul(priceDecimal).toNumber()
+    : undefined;
+
     const detailItem = {
       name: transaction.item.name,
-      type: transaction.item.category.name, 
+      type: transaction.item.category.name,
       unit: transaction.item.unit.name,
-      code: transaction.item.subcategoryCode?.code ?? undefined, 
-      quantity: transaction.amount,
-      price: transaction.price ?? undefined,
-      total: transaction.price ? transaction.amount * transaction.price : undefined,
+      code: transaction.item.subcategoryCode?.code ?? undefined,
+      quantity, // number
+      price,    // number | undefined
+      total,    // number | undefined
     };
 
     return NextResponse.json({
@@ -45,7 +56,7 @@ export async function GET(
         createdAt: transaction.createdAt,
         user: transaction.User?.name || 'Sistema',
         productos: [detailItem],
-        totalGeneral: detailItem.total ?? null,
+        totalGeneral: total ?? null,
         type: transaction.type,
       },
     });

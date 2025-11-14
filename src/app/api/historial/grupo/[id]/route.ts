@@ -17,9 +17,9 @@ export async function GET(
           include: {
             item: {
               include: {
-                category: true,           
+                category: true,
                 unit: true,
-                subcategoryCode: true,    
+                subcategoryCode: true,
               },
             },
           },
@@ -35,17 +35,27 @@ export async function GET(
       );
     }
 
-    const productos = group.transactions.map((t) => ({
-      name: t.item.name,
-      type: t.item.category.name, 
-      unit: t.item.unit.name,
-      code: t.item.subcategoryCode?.code ?? undefined,
-      quantity: t.amount,
-      price: t.price ?? undefined,
-      total: t.price ? t.amount * t.price : undefined,
-    }));
+    const productos = group.transactions.map((t) => {
+      // t.amount / t.price pueden ser Decimal o number -> los normalizamos a number
+      const quantity = Number(t.amount ?? 0);
+      const price = t.price != null ? Number(t.price) : undefined;
+      const total = price != null ? quantity * price : undefined;
 
-    const totalGeneral = productos.reduce((sum, p) => sum + (p.total ?? 0), 0);
+      return {
+        name: t.item.name,
+        type: t.item.category.name,
+        unit: t.item.unit.name,
+        code: t.item.subcategoryCode?.code ?? undefined,
+        quantity, // number
+        price,    // number | undefined
+        total,    // number | undefined
+      };
+    });
+
+    const totalGeneral = productos.reduce(
+      (sum, p) => sum + (p.total ?? 0),
+      0
+    );
 
     return NextResponse.json({
       data: {

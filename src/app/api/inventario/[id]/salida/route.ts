@@ -50,8 +50,8 @@ export async function POST(
       return NextResponse.json({ error: 'Item no encontrado' }, { status: 404 });
     }
 
-    // Validar stock disponible
-    if (item.quantity < amount) {
+    // ✅ Validar stock disponible (Decimal -> number)
+    if (Number(item.quantity) < amount) {
       return NextResponse.json(
         { error: 'No hay suficiente cantidad en inventario' },
         { status: 400 }
@@ -72,7 +72,7 @@ export async function POST(
     const group = await prisma.inventoryTransactionGroup.create({
       data: {
         paymentMethod,
-        clientName: clientName || null,
+      clientName: clientName || null,
         notes: notes || null,
         userId: session?.user.id,
       },

@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     const where: Prisma.InventoryTransactionWhereInput = {
       ...(transactionType && {
-        type: transactionType  as TransactionType,
+        type: transactionType as TransactionType,
       }),
       ...(Object.keys(itemFilters).length > 0 && {
         item: { is: itemFilters },
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
           },
         },
       }),
-      ...(quantity && {
+      ...(quantity !== undefined && {
         amount: {
           gte: quantity,
         },
@@ -89,10 +89,16 @@ export async function GET(req: NextRequest) {
 
     const groupResults = groups.map((group) => {
       const first = group.transactions[0];
+
+      const totalAmount = group.transactions.reduce(
+        (sum, t) => sum + Number(t.amount ?? 0),
+        0
+      );
+
       return {
         id: group.id,
         createdAt: group.createdAt,
-        amount: group.transactions.reduce((sum, t) => sum + t.amount, 0),
+        amount: totalAmount, // number
         type: first.type,
         itemName: `${group.transactions.length} productos`,
         user: group.user?.name || 'Sistema',
@@ -103,9 +109,9 @@ export async function GET(req: NextRequest) {
     const individualResults = individualTransactions.map((t) => ({
       id: t.id,
       createdAt: t.createdAt,
-      amount: t.amount,
+      amount: Number(t.amount ?? 0), // normalizamos a number
       type: t.type,
-      price: t.price,
+      price: t.price != null ? Number(t.price) : null, // number | null
       itemName:
         t.type === 'EDICION_PRODUCTO' ? `${t.item.name} (editado)` : t.item.name,
       user: t.User?.name || 'Sistema',
