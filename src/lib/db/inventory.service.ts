@@ -31,17 +31,20 @@ export async function createTransaction({
     throw new Error('Tipo de transacción no soportado');
   }
 
-  if (isSale && item.quantity < quantity) {
+  // 🔹 Normalizar Decimal -> number para operar y comparar
+  const currentQuantity = Number(item.quantity ?? 0);
+
+  if (isSale && currentQuantity < quantity) {
     throw new Error('Stock insuficiente para la venta');
   }
 
   const newQuantity = isSale
-    ? item.quantity - quantity
-    : item.quantity + quantity;
+    ? currentQuantity - quantity
+    : currentQuantity + quantity;
 
   const updatedItem = await prisma.inventoryItem.update({
     where: { id: itemId },
-    data: { quantity: newQuantity },
+    data: { quantity: newQuantity }, // Prisma castea number -> Decimal
   });
 
   const transaction = await prisma.inventoryTransaction.create({
