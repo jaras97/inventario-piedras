@@ -83,23 +83,39 @@ const monthlySalesRaw = await prisma.$queryRaw<MonthlySalesRow[]>`
       items.find((i) => i.id === id)?.name || 'Desconocido';
 
     return NextResponse.json({
-      monthlySales,
-      topToday: topToday.map((t) => ({
-        name: getLabel(t.itemId),
-        quantity: t._sum.amount ?? 0,
-        total: (t._sum.amount ?? 0) * (t._sum.price ?? 0),
-      })),
-      topMonth: topMonth.map((t) => ({
-        name: getLabel(t.itemId),
-        quantity: t._sum.amount ?? 0,
-        total: (t._sum.amount ?? 0) * (t._sum.price ?? 0),
-      })),
-      topAllTime: topAllTime.map((t) => ({
-        name: getLabel(t.itemId),
-        quantity: t._sum.amount ?? 0,
-        total: (t._sum.amount ?? 0) * (t._sum.price ?? 0),
-      })),
-    });
+  monthlySales,
+  topToday: topToday.map((t) => {
+    const amount = Number(t._sum.amount ?? 0);
+    const price  = Number(t._sum.price ?? 0);
+
+    return {
+      name: getLabel(t.itemId),
+      quantity: amount,
+      total: amount * price,
+    };
+  }),
+  topMonth: topMonth.map((t) => {
+    const amount = Number(t._sum.amount ?? 0);
+    const price  = Number(t._sum.price ?? 0);
+
+    return {
+      name: getLabel(t.itemId),
+      quantity: amount,
+      total: amount * price,
+    };
+  }),
+  topAllTime: topAllTime.map((t) => {
+    const amount = Number(t._sum.amount ?? 0);
+    const price  = Number(t._sum.price ?? 0);
+
+    return {
+      name: getLabel(t.itemId),
+      quantity: amount,
+      total: amount * price,
+    };
+  }),
+});
+
   } catch (error) {
     console.error('Error en /api/dashboard/contable:', error);
     return NextResponse.json(
