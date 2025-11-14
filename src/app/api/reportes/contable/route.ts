@@ -55,17 +55,23 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    const totalVentas = ventas.reduce(
-      (sum, v) => sum + (v.price ?? 0) * v.amount,
-      0
-    );
+    const totalVentas = ventas.reduce((sum, v) => {
+      const amountNum = Number(v.amount ?? 0);
+      const priceNum = v.price != null ? Number(v.price) : 0;
+      return sum + priceNum * amountNum;
+    }, 0);
 
-    const totalUnidades = ventas.reduce((sum, v) => sum + v.amount, 0);
+    const totalUnidades = ventas.reduce((sum, v) => {
+      const amountNum = Number(v.amount ?? 0);
+      return sum + amountNum;
+    }, 0);
 
     const resumenPorMetodoPago: Record<string, number> = {};
     ventas.forEach((v) => {
       const metodo = v.group?.paymentMethod ?? 'N/A';
-      const total = (v.price ?? 0) * v.amount;
+      const amountNum = Number(v.amount ?? 0);
+      const priceNum = v.price != null ? Number(v.price) : 0;
+      const total = priceNum * amountNum;
       if (!resumenPorMetodoPago[metodo]) resumenPorMetodoPago[metodo] = 0;
       resumenPorMetodoPago[metodo] += total;
     });
@@ -75,17 +81,22 @@ export async function GET(req: NextRequest) {
       totalUnidades,
       transacciones: totalCount,
       resumenPorMetodoPago,
-      data: ventas.map((v) => ({
-        fecha: moment(v.createdAt).tz(TIMEZONE).format('YYYY-MM-DD HH:mm'),
-        producto: v.item?.name ?? '',
-        cantidad: v.amount,
-        precioUnit: v.price ?? 0,
-        total: v.amount * (v.price ?? 0),
-        usuario: v.User?.name ?? 'Sistema',
-        metodoPago: v.group?.paymentMethod ?? 'N/A',
-        cliente: v.group?.clientName ?? 'N/A',
-        notas: v.group?.notes ?? '—',
-      })),
+      data: ventas.map((v) => {
+        const amountNum = Number(v.amount ?? 0);
+        const priceNum = v.price != null ? Number(v.price) : 0;
+
+        return {
+          fecha: moment(v.createdAt).tz(TIMEZONE).format('YYYY-MM-DD HH:mm'),
+          producto: v.item?.name ?? '',
+          cantidad: amountNum,
+          precioUnit: priceNum,
+          total: amountNum * priceNum,
+          usuario: v.User?.name ?? 'Sistema',
+          metodoPago: v.group?.paymentMethod ?? 'N/A',
+          cliente: v.group?.clientName ?? 'N/A',
+          notas: v.group?.notes ?? '—',
+        };
+      }),
     });
   } catch (err) {
     console.error(err);

@@ -36,15 +36,20 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const data = transactions.map((tx) => ({
-      fecha: tx.createdAt,
-      producto: tx.item.name,
-      unidad: tx.item.unit.name,
-      cantidad: tx.amount,
-      precioUnitario: tx.price ?? 0,
-      total: (tx.price ?? 0) * tx.amount,
-      usuario: tx.User?.name || 'Sistema',
-    }));
+    const data = transactions.map((tx) => {
+      const cantidad = Number(tx.amount ?? 0);
+      const precioUnitario = tx.price != null ? Number(tx.price) : 0;
+
+      return {
+        fecha: tx.createdAt,
+        producto: tx.item.name,
+        unidad: tx.item.unit.name,
+        cantidad,
+        precioUnitario,
+        total: precioUnitario * cantidad,
+        usuario: tx.User?.name || 'Sistema',
+      };
+    });
 
     return NextResponse.json({ data });
   } catch (error) {

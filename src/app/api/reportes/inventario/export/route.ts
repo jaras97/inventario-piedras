@@ -6,9 +6,9 @@ export async function POST() {
   try {
     const items = await prisma.inventoryItem.findMany({
       include: {
-        category: true, // ✅ nombre de categoría
-        unit: true,     // ✅ unidad
-        subcategoryCode: true, // ✅ código
+        category: true,
+        unit: true,
+        subcategoryCode: true,
       },
       orderBy: {
         name: 'asc',
@@ -29,14 +29,17 @@ export async function POST() {
     ];
 
     items.forEach((item) => {
+      const quantity = Number(item.quantity ?? 0);
+      const price = Number(item.price ?? 0);
+
       sheet.addRow({
         nombre: item.name,
         categoria: item.category?.name ?? '',
         codigo: item.subcategoryCode?.code ?? '',
         unidad: item.unit.name,
-        cantidad: item.quantity,
-        precio: item.price,
-        subtotal: item.quantity * item.price,
+        cantidad: quantity,
+        precio: price,
+        subtotal: quantity * price,
       });
     });
 

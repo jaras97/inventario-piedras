@@ -61,8 +61,15 @@ export async function POST(req: NextRequest) {
     const metodoMap: Record<string, number> = {};
 
     ventas.forEach((tx) => {
-      const total = tx.price ? tx.price * tx.amount : 0;
-      const fechaLocal = moment(tx.createdAt).tz(timezone).format('DD/MM/YYYY HH:mm');
+      // 🔹 Convertimos Decimal -> number antes de operar
+      const amountNum = Number(tx.amount ?? 0);
+      const priceNum = tx.price != null ? Number(tx.price) : 0;
+
+      const total = priceNum * amountNum;
+
+      const fechaLocal = moment(tx.createdAt)
+        .tz(timezone)
+        .format('DD/MM/YYYY HH:mm');
       const metodo = tx.group?.paymentMethod ?? 'N/A';
 
       // Sumar total por método de pago
@@ -71,8 +78,8 @@ export async function POST(req: NextRequest) {
       sheet.addRow({
         fecha: fechaLocal,
         producto: tx.item?.name ?? '',
-        cantidad: tx.amount,
-        precioUnit: tx.price ?? '',
+        cantidad: amountNum,
+        precioUnit: priceNum || '',
         total,
         metodoPago: metodo,
         cliente: tx.group?.clientName ?? 'N/A',
@@ -82,8 +89,16 @@ export async function POST(req: NextRequest) {
     });
 
     // Agregar resumen general
-    const totalVentas = ventas.reduce((sum, v) => sum + (v.price ?? 0) * v.amount, 0);
-    const totalUnidades = ventas.reduce((sum, v) => sum + v.amount, 0);
+    const totalVentas = ventas.reduce((sum, v) => {
+      const amountNum = Number(v.amount ?? 0);
+      const priceNum = v.price != null ? Number(v.price) : 0;
+      return sum + priceNum * amountNum;
+    }, 0);
+
+    const totalUnidades = ventas.reduce((sum, v) => {
+      const amountNum = Number(v.amount ?? 0);
+      return sum + amountNum;
+    }, 0);
 
     sheet.addRow([]);
     sheet.addRow(['Resumen General']);

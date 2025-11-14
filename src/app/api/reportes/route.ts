@@ -49,37 +49,53 @@ export async function GET(req: NextRequest) {
       prisma.inventoryTransaction.count({ where }),
     ]);
 
-    const totalVentas = await prisma.inventoryTransaction.aggregate({
+    const totalVentasAgg = await prisma.inventoryTransaction.aggregate({
       where,
       _sum: {
         price: true,
       },
     });
 
-    const totalUnidades = await prisma.inventoryTransaction.aggregate({
+    const totalUnidadesAgg = await prisma.inventoryTransaction.aggregate({
       where,
       _sum: {
         amount: true,
       },
     });
 
-    const data = transactions.map((tx) => ({
-      fecha: tx.createdAt.toISOString().split('T')[0],
-      producto: tx.item?.name ?? '',
-      cantidad: tx.amount,
-      precioUnit: tx.price ?? 0,
-      total: tx.amount * (tx.price ?? 0),
-      usuario: tx.User?.name ?? 'Sistema',
-    }));
+    const data = transactions.map((tx) => {
+      const cantidad = Number(tx.amount ?? 0);
+      const precioUnit = tx.price != null ? Number(tx.price) : 0;
+
+      return {
+        fecha: tx.createdAt.toISOString().split('T')[0],
+        producto: tx.item?.name ?? '',
+        cantidad,
+        precioUnit,
+        total: cantidad * precioUnit,
+        usuario: tx.User?.name ?? 'Sistema',
+      };
+    });
+
+    const totalVentasNumber = totalVentasAgg._sum.price != null
+      ? Number(totalVentasAgg._sum.price)
+      : 0;
+
+    const totalUnidadesNumber = totalUnidadesAgg._sum.amount != null
+      ? Number(totalUnidadesAgg._sum.amount)
+      : 0;
 
     return NextResponse.json({
       data,
       totalItems: totalCount,
-      totalVentas: totalVentas._sum.price || 0,
-      totalUnidades: totalUnidades._sum.amount || 0,
+      totalVentas: totalVentasNumber,
+      totalUnidades: totalUnidadesNumber,
     });
   } catch (error) {
     console.error('Error al generar reporte paginado:', error);
-    return NextResponse.json({ error: 'Error generando el reporte' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error generando el reporte' },
+      { status: 500 }
+    );
   }
 }

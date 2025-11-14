@@ -15,10 +15,11 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get('category') || undefined;
     const unit = searchParams.get('unit') || undefined;
     const code = searchParams.get('code') || undefined;
-const quantityRaw = searchParams.get('quantity');
-const quantity = quantityRaw
-  ? roundToDecimals(parseFloat(quantityRaw), 3)
-  : undefined;
+
+    const quantityRaw = searchParams.get('quantity');
+    const quantity = quantityRaw
+      ? roundToDecimals(parseFloat(quantityRaw), 3)
+      : undefined;
 
     const where: Prisma.InventoryItemWhereInput = {
       ...(name && {
@@ -27,22 +28,22 @@ const quantity = quantityRaw
           mode: 'insensitive',
         },
       }),
- ...(category && {
-  categoryId: category,
-}),
+      ...(category && {
+        categoryId: category,
+      }),
       ...(code && {
-  subcategoryCode: {
-    is: {
-      code: {
-        equals: code,
-        mode: 'insensitive',
-      },
-    },
-  },
-}),
-...(unit && {
-  unitId: unit,
-}),
+        subcategoryCode: {
+          is: {
+            code: {
+              equals: code,
+              mode: 'insensitive',
+            },
+          },
+        },
+      }),
+      ...(unit && {
+        unitId: unit,
+      }),
       ...(quantity && {
         quantity: {
           gte: quantity,
@@ -66,25 +67,26 @@ const quantity = quantityRaw
     ]);
 
     return NextResponse.json({
-data: items.map((item) => ({
-  id: item.id,
-  name: item.name,
-  categoryId: item.categoryId,
-  category: {
-    id: item.category?.id ?? '',
-    name: item.category?.name ?? '',
-  },
-  unit: {
-    id: item.unit?.id ?? '',
-    name: item.unit?.name ?? '',
-    valueType: item.unit?.valueType ?? 'DECIMAL',
-  },
-  subcategoryCode: item.subcategoryCode
-    ? { id: item.subcategoryCode.id, code: item.subcategoryCode.code }
-    : null,
-  quantity: roundToDecimals(item.quantity, 3),
-  price:  roundToDecimals(item.price, 3),
-})),
+      data: items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        categoryId: item.categoryId,
+        category: {
+          id: item.category?.id ?? '',
+          name: item.category?.name ?? '',
+        },
+        unit: {
+          id: item.unit?.id ?? '',
+          name: item.unit?.name ?? '',
+          valueType: item.unit?.valueType ?? 'DECIMAL',
+        },
+        subcategoryCode: item.subcategoryCode
+          ? { id: item.subcategoryCode.id, code: item.subcategoryCode.code }
+          : null,
+        // 👇 aquí convertimos Decimal -> number antes de redondear
+        quantity: roundToDecimals(Number(item.quantity), 3),
+        price: roundToDecimals(Number(item.price), 3),
+      })),
       total,
       page,
       pageSize: limit,
