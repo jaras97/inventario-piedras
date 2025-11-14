@@ -9,7 +9,7 @@ import InventoryFilters, {
   InventoryFilters as FilterValues,
 } from '@/components/inventory/InventoryFilters';
 import { Loader2, Plus, Upload, Pencil } from 'lucide-react';
-import CreateProductModal from '@/components/inventory/CreateProductModal';
+
 import GroupUploadModal from '@/components/ui/GroupUploadModal';
 import { useSession } from 'next-auth/react';
 import { hasWriteAccess } from '@/lib/auth/roles';
@@ -18,6 +18,7 @@ import EditProductModal from '@/components/inventory/EditProductModal';
 import { formatNumber } from '@/lib/utils/format';
 import { useMessageStore } from '@/store/messageStore';
 import Message from '@/components/ui/Message';
+import CreateProductModal from '@/components/inventory/CreateProductModal';
 
 type Inventory = {
   id: string;
