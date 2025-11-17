@@ -14,7 +14,7 @@ export async function POST(
     const { id } = await context.params;
     const body = await req.json();
 
-    const { amount, price, paymentMethod, clientName, notes } = body;
+    const { amount, price, paymentMethod, clientName, notes, soldAt } = body
 
     // Validaciones básicas
     if (!amount || amount <= 0 || !price || price <= 0 || !paymentMethod) {
@@ -68,13 +68,16 @@ export async function POST(
       );
     }
 
+    const createdAt = soldAt ? new Date(soldAt) : undefined;
+
     // 1. Crear grupo de transacción
     const group = await prisma.inventoryTransactionGroup.create({
       data: {
         paymentMethod,
-      clientName: clientName || null,
+        clientName: clientName || null,
         notes: notes || null,
         userId: session?.user.id,
+        ...(createdAt && { createdAt }), // 👈 sobrescribe default(now())
       },
     });
 
@@ -87,6 +90,7 @@ export async function POST(
         price: roundedPrice,
         groupId: group.id,
         userId: session?.user.id,
+        ...(createdAt && { createdAt }), // 👈 igual que el grupo
       },
     });
 

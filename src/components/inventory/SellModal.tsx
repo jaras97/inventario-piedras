@@ -27,7 +27,18 @@ type SellForm = {
     | 'OTRO';
   clientName?: string;
   notes?: string;
+  soldAt?: string;
 };
+
+function toLocalInputValue(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
 
 type Props = {
   itemId: string;
@@ -81,6 +92,7 @@ export default function SellModal({
           ]),
           clientName: z.string().optional(),
           notes: z.string().optional(),
+          soldAt: z.string().optional(), // 👈 validamos como string opcional
         });
       }, [unitType]),
     ),
@@ -90,12 +102,13 @@ export default function SellModal({
       paymentMethod: 'EFECTIVO',
       clientName: '',
       notes: '',
+      soldAt: toLocalInputValue(new Date()), // 👈 por defecto “ahora” en local
     },
   });
 
   useEffect(() => {
-    if (open) setAdjusted(false);
-  }, [open]);
+    if (open) setValue('soldAt', toLocalInputValue(new Date()));
+  }, [open, setValue]);
 
   useEffect(() => {
     if (!open) return;
@@ -138,10 +151,14 @@ export default function SellModal({
 
     setLoading(true);
 
+    const soldAtUTC = data.soldAt
+      ? new Date(data.soldAt).toISOString()
+      : undefined;
+
     const res = await fetch(`/api/inventario/${itemId}/salida`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, soldAt: soldAtUTC }),
     });
 
     setLoading(false);
@@ -245,6 +262,20 @@ export default function SellModal({
                     rows={3}
                     placeholder='Comentarios o detalles adicionales'
                   />
+                </div>
+
+                <div>
+                  <label className='text-sm font-medium text-gray-700'>
+                    Fecha y hora de la venta
+                  </label>
+                  <input
+                    type='datetime-local'
+                    {...register('soldAt')}
+                    className='mt-1 w-full border rounded px-3 py-2 text-sm'
+                  />
+                  <p className='text-xs text-gray-500 mt-1'>
+                    Se almacenará en UTC automáticamente.
+                  </p>
                 </div>
 
                 <div className='space-y-1'>

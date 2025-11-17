@@ -21,23 +21,27 @@ export default function SidebarLayout() {
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay mobile */}
       {open && (
         <div
-          className={`fixed inset-0 bg-[rgba(0,0,0,0.08)] z-40 transition-opacity duration-300 lg:hidden`}
+          className='fixed inset-0 bg-[rgba(0,0,0,0.08)] z-40 transition-opacity duration-300 lg:hidden'
           onClick={() => setOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`bg-blue-900 text-gray-800 w-64 flex flex-col justify-between p-6 shadow-md z-50
-        fixed inset-y-0 left-0 transform transition-transform duration-300 ease-in-out
-        ${open ? 'translate-x-0' : '-translate-x-full'} 
-        lg:translate-x-0 lg:relative lg:inset-auto lg:h-screen`}
+        className={`
+          bg-blue-900 text-gray-800 w-64 flex flex-col justify-between p-6 shadow-md
+          fixed inset-y-0 left-0 z-50
+          h-screen overflow-y-auto
+          transform transition-transform duration-300 ease-in-out
+          ${open ? 'translate-x-0' : '-translate-x-full'}
+          lg:translate-x-0
+        `}
       >
         <div>
-          <div className='flex items-center justify-center mb-6 px-4 py-6 border-b border-gray-200'>
+          <div className='flex items-center justify-center mb-6 px-4 py-6 border-b border-gray-200/40'>
             <Image
               src='/logo.svg'
               alt='Metales y Brillantes'
@@ -84,17 +88,18 @@ export default function SidebarLayout() {
 
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
-          className='flex items-center gap-2 text-sm text-gray-600 hover:text-red-500 transition mt-6'
+          className='flex items-center gap-2 text-sm text-gray-200/80 hover:text-red-400 transition mt-6'
         >
           <LogOut className='w-4 h-4' />
           Cerrar sesión
         </button>
 
+        {/* Botón cerrar en mobile */}
         <button
           className='absolute top-4 right-4 block lg:hidden'
           onClick={() => setOpen(false)}
         >
-          <X className='text-gray-600' />
+          <X className='text-gray-200' />
         </button>
       </aside>
 

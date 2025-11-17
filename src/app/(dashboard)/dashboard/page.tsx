@@ -34,8 +34,8 @@ interface DashboardData {
   topMonth: TopProduct[];
   topAllTime: TopProduct[];
   totalRevenue: number;
-  totalUnits: number;
   totalTransactions: number;
+  // totalUnits ya no se usa → lo eliminamos del estado
 }
 
 export default function ContableDashboardPage() {
@@ -54,13 +54,13 @@ export default function ContableDashboardPage() {
           0,
         );
 
-        const totalUnits = json.topAllTime.reduce(
-          (acc: number, p: { quantity: number }) => acc + p.quantity,
-          0,
-        );
         const totalTransactions = json.monthlySales.length;
 
-        setData({ ...json, totalRevenue, totalUnits, totalTransactions });
+        setData({
+          ...json,
+          totalRevenue,
+          totalTransactions,
+        });
       } catch (err) {
         console.error('Error cargando dashboard contable:', err);
       } finally {
@@ -74,14 +74,16 @@ export default function ContableDashboardPage() {
     return (
       <div className='flex justify-center items-center h-full py-32'>
         <Loader2 className='animate-spin w-6 h-6 text-blue-500' />
-        <span className='ml-2'>Cargando dashboard...</span>
+        <span className='ml-2 text-sm sm:text-base'>Cargando dashboard...</span>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <p className='text-red-600'>Error al cargar los datos del dashboard</p>
+      <p className='text-red-600 text-sm sm:text-base'>
+        Error al cargar los datos del dashboard
+      </p>
     );
   }
 
@@ -99,56 +101,67 @@ export default function ContableDashboardPage() {
   ];
 
   return (
-    <div className='p-6 space-y-6'>
-      {/* Resumen general */}
-      <section className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-        <SummaryCard
-          title='Ingresos Totales'
-          value={data.totalRevenue}
-          color='green'
-          prefix='$'
-        />
-        <SummaryCard title='Unidades Vendidas' value={data.totalUnits} />
-        <SummaryCard title='Transacciones' value={data.totalTransactions} />
-      </section>
+    <div className='p-4 sm:p-6 lg:p-8'>
+      <div className='max-w-8xl mx-auto space-y-6 lg:space-y-8'>
+        {/* Resumen general */}
+        <section className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+          <SummaryCard
+            title='Ingresos Totales'
+            value={data.totalRevenue}
+            color='green'
+            prefix='$'
+          />
+          <SummaryCard
+            title='Transacciones'
+            value={data.totalTransactions}
+            color='blue'
+          />
+        </section>
 
-      {/* Gráfico mensual */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ventas Mensuales</CardTitle>
-        </CardHeader>
-        <CardContent className='h-80'>
-          <ResponsiveContainer width='100%' height='100%'>
-            <BarChart data={data.monthlySales}>
-              <CartesianGrid strokeDasharray='3 3' />
-              <XAxis dataKey='month' />
-              <YAxis />
-              <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
-              <Legend />
-              <Bar dataKey='total' name='Ventas' fill='#3b82f6' />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        {/* Gráfico mensual */}
+        <Card>
+          <CardHeader className='pb-2'>
+            <CardTitle className='text-base sm:text-lg'>
+              Ventas Mensuales
+            </CardTitle>
+          </CardHeader>
+          <CardContent className='h-64 sm:h-72 lg:h-80'>
+            <ResponsiveContainer width='100%' height='100%'>
+              <BarChart data={data.monthlySales}>
+                <CartesianGrid strokeDasharray='3 3' />
+                <XAxis dataKey='month' />
+                <YAxis />
+                <Tooltip
+                  formatter={(value: number | string) =>
+                    `$${Number(value).toLocaleString()}`
+                  }
+                />
+                <Legend />
+                <Bar dataKey='total' name='Ventas' fill='#3b82f6' />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-      {/* Top productos */}
-      <section className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-        <DynamicTable
-          title='Más vendidos hoy'
-          columns={productColumns}
-          data={data.topToday}
-        />
-        <DynamicTable
-          title='Más vendidos del mes'
-          columns={productColumns}
-          data={data.topMonth}
-        />
-        <DynamicTable
-          title='Más vendidos históricos'
-          columns={productColumns}
-          data={data.topAllTime}
-        />
-      </section>
+        {/* Top productos */}
+        <section className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+          <DynamicTable
+            title='Más vendidos hoy'
+            columns={productColumns}
+            data={data.topToday}
+          />
+          <DynamicTable
+            title='Más vendidos del mes'
+            columns={productColumns}
+            data={data.topMonth}
+          />
+          <DynamicTable
+            title='Más vendidos históricos'
+            columns={productColumns}
+            data={data.topAllTime}
+          />
+        </section>
+      </div>
     </div>
   );
 }
@@ -171,12 +184,16 @@ function SummaryCard({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='text-sm'>{title}</CardTitle>
+    <Card className='h-full'>
+      <CardHeader className='pb-1'>
+        <CardTitle className='text-xs sm:text-sm font-medium text-gray-600'>
+          {title}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className={`text-2xl font-bold ${colorMap[color]}`.trim()}>
+        <p
+          className={`text-2xl sm:text-3xl font-bold ${colorMap[color]}`.trim()}
+        >
           {prefix}
           {value.toLocaleString()}
         </p>
