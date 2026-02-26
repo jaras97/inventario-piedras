@@ -1,6 +1,6 @@
 // app/api/reportes/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { Prisma, TransactionType } from '@prisma/client';
 
 export async function GET(req: NextRequest) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { hasWriteAccess } from '@/lib/auth/roles';
 import { TransactionType, PaymentMethod } from '@prisma/client';
 

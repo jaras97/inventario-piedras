@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 
 type MonthlySalesRow = {
