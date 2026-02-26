@@ -92,14 +92,6 @@ export default function ContableDashboardPage() {
     <div className='p-4 sm:p-6 lg:p-8'>
       <div className='max-w-8xl mx-auto space-y-6 lg:space-y-8'>
         {/* Resumen general */}
-        <section className='grid grid-cols-1 gap-4'>
-          <SummaryCard
-            title='Ingresos Totales'
-            value={data.totalRevenue}
-            color='green'
-            prefix='$'
-          />
-        </section>
 
         {/* Gráfico mensual */}
         <Card>
@@ -146,41 +138,5 @@ export default function ContableDashboardPage() {
         </section>
       </div>
     </div>
-  );
-}
-
-function SummaryCard({
-  title,
-  value,
-  color = 'blue',
-  prefix = '',
-}: {
-  title: string;
-  value: number;
-  color?: 'blue' | 'green' | 'red';
-  prefix?: string;
-}) {
-  const colorMap = {
-    blue: 'text-blue-600',
-    green: 'text-green-600',
-    red: 'text-red-600',
-  };
-
-  return (
-    <Card className='h-full'>
-      <CardHeader className='pb-1'>
-        <CardTitle className='text-xs sm:text-sm font-medium text-gray-600'>
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p
-          className={`text-2xl sm:text-3xl font-bold ${colorMap[color]}`.trim()}
-        >
-          {prefix}
-          {value.toLocaleString()}
-        </p>
-      </CardContent>
-    </Card>
   );
 }

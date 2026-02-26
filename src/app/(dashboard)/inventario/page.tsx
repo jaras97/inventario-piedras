@@ -8,7 +8,14 @@ import { DynamicTable } from '@/components/ui/DynamicTable';
 import InventoryFilters, {
   InventoryFilters as FilterValues,
 } from '@/components/inventory/InventoryFilters';
-import { Loader2, Plus, Upload, Pencil } from 'lucide-react';
+import {
+  Loader2,
+  Plus,
+  Upload,
+  Pencil,
+  ShoppingCart,
+  Settings,
+} from 'lucide-react';
 
 import GroupUploadModal from '@/components/ui/GroupUploadModal';
 import { useSession } from 'next-auth/react';
@@ -223,7 +230,7 @@ export default function InventarioPage() {
                   className='bg-red-600 text-white px-2 py-1 rounded text-xs'
                   onClick={() => openModal(item, 'SELL')}
                 >
-                  <Upload className='w-4 h-4' />
+                  <ShoppingCart className='w-4 h-4' />
                 </button>
                 <button
                   className='bg-gray-600 text-white px-2 py-1 rounded text-xs'
@@ -235,7 +242,7 @@ export default function InventarioPage() {
                   className='bg-yellow-600 text-white px-2 py-1 rounded text-xs disabled:opacity-50'
                   onClick={() => openModal(item, 'ADJUST')}
                 >
-                  Ajustar
+                  <Settings className='w-4 h-4' />
                 </button>
               </div>
             )
