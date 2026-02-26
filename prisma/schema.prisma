@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// ──────────────────────────────────────────────
+// 🧑‍💼 Autenticación y Usuarios
+// ──────────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String?
+  role          Role      @default(USER)
+  isAuthorized  Boolean   @default(false)
+  image         String?
+
+  accounts     Account[]
+  sessions     Session[]
+  transactions InventoryTransaction[]
+  groups       InventoryTransactionGroup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  ADMIN
+  USER
+  AUDITOR
+}
+
+//
+// ──────────────────────────────────────────────
+// 💎 Inventario de piedras preciosas
+// ──────────────────────────────────────────────
+
+model InventoryCategory {
+  id    String                     @id @default(cuid())
+  name  String                     @unique
+  items InventoryItem[]
+  codes InventorySubcategoryCode[]
+}
+
+model InventorySubcategoryCode {
+  id         String            @id @default(cuid())
+  code       String
+  categoryId String
+  category   InventoryCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  items InventoryItem[] @relation("SubcategoryCodeToItems")
+
+  @@unique([code, categoryId])
+}
+
+model InventoryUnit {
+  id        String          @id @default(cuid())
+  name      String          @unique
+  valueType ValueType       @default(DECIMAL)
+  items     InventoryItem[]
+}
+
+enum ValueType {
+  INTEGER
+  DECIMAL
+}
+
+model InventoryItem {
+  id                String  @id @default(cuid())
+  name              String
+  categoryId        String
+  unitId            String
+  subcategoryCodeId String?
+
+  category        InventoryCategory         @relation(fields: [categoryId], references: [id])
+  unit            InventoryUnit             @relation(fields: [unitId], references: [id])
+  subcategoryCode InventorySubcategoryCode? @relation("SubcategoryCodeToItems", fields: [subcategoryCodeId], references: [id])
+
+  quantity Decimal @default(0) @db.Decimal(18, 3)
+  price    Decimal @default(0) @db.Decimal(18, 3)
+
+  isActive  Boolean   @default(true) // 👈 NUEVO
+  deletedAt DateTime? // 👈 NUEVO
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions InventoryTransaction[]
+
+  @@unique([name, categoryId, unitId])
+}
+
+enum PaymentMethod {
+  EFECTIVO
+  TRANSFERENCIA
+  NEQUI
+  DAVIPLATA
+  TARJETA
+  OTRO
+}
+
+model InventoryTransaction {
+  id        String                     @id @default(cuid())
+  itemId    String
+  item      InventoryItem              @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  type      TransactionType
+  amount    Decimal                    @db.Decimal(18, 3)
+  price     Decimal                    @default(0) @db.Decimal(18, 2)
+  groupId   String?
+  group     InventoryTransactionGroup? @relation(fields: [groupId], references: [id])
+  userId    String?
+  User      User?                      @relation(fields: [userId], references: [id])
+  createdAt DateTime                   @default(now())
+
+  // Nuevos campos:
+  paymentMethod PaymentMethod? // solo para ventas
+  clientName    String?
+  notes         String?        @db.Text
+}
+
+model InventoryTransactionGroup {
+  id           String                 @id @default(cuid())
+  createdAt    DateTime               @default(now())
+  userId       String?
+  user         User?                  @relation(fields: [userId], references: [id])
+  transactions InventoryTransaction[]
+
+  paymentMethod PaymentMethod?
+  clientName    String? // Opcional
+  notes         String? // Opcional
+}
+
+enum TransactionType {
+  CARGA_INDIVIDUAL
+  CARGA_GRUPAL
+  VENTA_INDIVIDUAL
+  VENTA_GRUPAL
+  EDICION_PRODUCTO
+  AJUSTE_NEGATIVO
+}
