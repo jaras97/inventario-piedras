@@ -1,20 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { ROLES } from '@/lib/auth/roles';
 
 export async function POST(req: NextRequest) {
-   const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions);
 
   if (!session?.user || session.user.role !== ROLES.ADMIN) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
   try {
-    const { name, categoryId, unitId, subcategoryCodeId, quantity, price } = await req.json();
+    const { name, categoryId, unitId, subcategoryCodeId, quantity, price } =
+      await req.json();
 
-    if (!name || !categoryId || !unitId || quantity === undefined || price === undefined) {
-      return NextResponse.json({ error: 'Faltan datos requeridos' }, { status: 400 });
+    if (
+      !name ||
+      !categoryId ||
+      !unitId ||
+      quantity === undefined ||
+      price === undefined
+    ) {
+      return NextResponse.json(
+        { error: 'Faltan datos requeridos' },
+        { status: 400 },
+      );
     }
 
     const [categoryExists, unitExists] = await Promise.all([
@@ -23,7 +33,10 @@ export async function POST(req: NextRequest) {
     ]);
 
     if (!categoryExists || !unitExists) {
-      return NextResponse.json({ error: 'Categoría o unidad inválida' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Categoría o unidad inválida' },
+        { status: 400 },
+      );
     }
 
     const newItem = await prisma.inventoryItem.create({

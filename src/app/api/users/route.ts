@@ -1,6 +1,6 @@
 // app/api/users/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { hash } from 'bcryptjs';
 
 // GET: Listar usuarios
@@ -19,10 +19,10 @@ export async function GET() {
     });
 
     return NextResponse.json({ data: users });
-  } catch  {
+  } catch {
     return NextResponse.json(
       { error: 'Error al obtener usuarios' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -30,12 +30,12 @@ export async function GET() {
 // POST: Crear usuario
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, role,isAuthorized } = await req.json();
+    const { name, email, password, role, isAuthorized } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Correo y contraseña requeridos' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -52,10 +52,10 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ data: newUser });
-  } catch  {
+  } catch {
     return NextResponse.json(
       { error: 'Error al crear usuario' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

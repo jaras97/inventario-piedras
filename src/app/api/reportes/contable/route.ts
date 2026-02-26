@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import moment from 'moment-timezone';
 
@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
     console.error(err);
     return NextResponse.json(
       { error: 'Error generando reporte contable' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

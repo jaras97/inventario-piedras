@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import ExcelJS from 'exceljs';
 
 export async function POST() {
@@ -57,7 +57,7 @@ export async function POST() {
     console.error('Error generando Excel de inventario:', error);
     return NextResponse.json(
       { error: 'Error generando Excel de inventario' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

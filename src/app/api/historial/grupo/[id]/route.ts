@@ -1,11 +1,11 @@
 // app/api/historial/grupo/[id]/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
@@ -31,7 +31,7 @@ export async function GET(
     if (!group) {
       return NextResponse.json(
         { error: 'Grupo de transacciones no encontrado' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -47,15 +47,12 @@ export async function GET(
         unit: t.item.unit.name,
         code: t.item.subcategoryCode?.code ?? undefined,
         quantity, // number
-        price,    // number | undefined
-        total,    // number | undefined
+        price, // number | undefined
+        total, // number | undefined
       };
     });
 
-    const totalGeneral = productos.reduce(
-      (sum, p) => sum + (p.total ?? 0),
-      0
-    );
+    const totalGeneral = productos.reduce((sum, p) => sum + (p.total ?? 0), 0);
 
     return NextResponse.json({
       data: {

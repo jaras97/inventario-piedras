@@ -1,6 +1,6 @@
 // app/api/users/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { hash } from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 
@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest) {
     console.error('Error al actualizar usuario:', error);
     return NextResponse.json(
       { error: 'Error al actualizar usuario' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -62,7 +62,7 @@ export async function DELETE(req: NextRequest) {
     console.error('Error al eliminar usuario:', error);
     return NextResponse.json(
       { error: 'Error al eliminar usuario' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

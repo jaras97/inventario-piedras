@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
@@ -8,7 +8,7 @@ export async function GET() {
         id: true,
         name: true,
         price: true,
-        quantity: true, 
+        quantity: true,
         unit: {
           select: {
             name: true,
@@ -28,7 +28,7 @@ export async function GET() {
       unit: item.unit.name,
       valueType: item.unit.valueType,
       price: item.price,
-      quantity: item.quantity, 
+      quantity: item.quantity,
     }));
 
     return NextResponse.json(mapped);

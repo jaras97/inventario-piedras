@@ -1,6 +1,6 @@
 // app/api/reportes/export/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import ExcelJS from 'exceljs';
 import { TransactionType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
@@ -14,17 +14,19 @@ export async function POST(req: NextRequest) {
     }
 
     const where: Prisma.InventoryTransactionWhereInput = {
-      ...(transactionType && transactionType !== 'Todas' && {
-        type: transactionType as TransactionType,
-      }),
-      ...(product && product.toLowerCase() !== 'todos' && {
-        item: {
-          name: {
-            contains: product,
-            mode: 'insensitive',
+      ...(transactionType &&
+        transactionType !== 'Todas' && {
+          type: transactionType as TransactionType,
+        }),
+      ...(product &&
+        product.toLowerCase() !== 'todos' && {
+          item: {
+            name: {
+              contains: product,
+              mode: 'insensitive',
+            },
           },
-        },
-      }),
+        }),
       createdAt: {
         gte: new Date(from),
         lte: new Date(to),
@@ -100,6 +102,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error generando Excel de transacciones:', error);
-    return NextResponse.json({ error: 'Error generando Excel' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error generando Excel' },
+      { status: 500 },
+    );
   }
 }

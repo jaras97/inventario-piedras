@@ -1,6 +1,6 @@
 // app/api/reportes/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { Prisma, TransactionType } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
@@ -16,23 +16,26 @@ export async function GET(req: NextRequest) {
     const offset = (page - 1) * limit;
 
     const where: Prisma.InventoryTransactionWhereInput = {
-      ...(transactionType && transactionType !== 'Todas' && {
-        type: transactionType as TransactionType,
-      }),
-      ...(from && to && {
-        createdAt: {
-          gte: new Date(from),
-          lte: new Date(to),
-        },
-      }),
-      ...(product && product !== 'todos' && {
-        item: {
-          name: {
-            contains: product,
-            mode: 'insensitive',
+      ...(transactionType &&
+        transactionType !== 'Todas' && {
+          type: transactionType as TransactionType,
+        }),
+      ...(from &&
+        to && {
+          createdAt: {
+            gte: new Date(from),
+            lte: new Date(to),
           },
-        },
-      }),
+        }),
+      ...(product &&
+        product !== 'todos' && {
+          item: {
+            name: {
+              contains: product,
+              mode: 'insensitive',
+            },
+          },
+        }),
     };
 
     const [transactions, totalCount] = await Promise.all([
@@ -77,13 +80,13 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    const totalVentasNumber = totalVentasAgg._sum.price != null
-      ? Number(totalVentasAgg._sum.price)
-      : 0;
+    const totalVentasNumber =
+      totalVentasAgg._sum.price != null ? Number(totalVentasAgg._sum.price) : 0;
 
-    const totalUnidadesNumber = totalUnidadesAgg._sum.amount != null
-      ? Number(totalUnidadesAgg._sum.amount)
-      : 0;
+    const totalUnidadesNumber =
+      totalUnidadesAgg._sum.amount != null
+        ? Number(totalUnidadesAgg._sum.amount)
+        : 0;
 
     return NextResponse.json({
       data,
@@ -95,7 +98,7 @@ export async function GET(req: NextRequest) {
     console.error('Error al generar reporte paginado:', error);
     return NextResponse.json(
       { error: 'Error generando el reporte' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

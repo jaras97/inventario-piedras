@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { roundToDecimals } from '@/lib/utils/round';
 

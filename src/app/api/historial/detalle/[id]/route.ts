@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
@@ -14,9 +14,9 @@ export async function GET(
       include: {
         item: {
           include: {
-            category: true,            
+            category: true,
             unit: true,
-            subcategoryCode: true,    
+            subcategoryCode: true,
           },
         },
         User: true,
@@ -26,20 +26,19 @@ export async function GET(
     if (!transaction) {
       return NextResponse.json(
         { error: 'Transacción no encontrada' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    
-  const amountDecimal = new Prisma.Decimal(transaction.amount ?? 0); // en schema es NOT NULL, pero por si acaso
-  const priceDecimal =
-    transaction.price == null ? null : new Prisma.Decimal(transaction.price); // puede ser null
+    const amountDecimal = new Prisma.Decimal(transaction.amount ?? 0); // en schema es NOT NULL, pero por si acaso
+    const priceDecimal =
+      transaction.price == null ? null : new Prisma.Decimal(transaction.price); // puede ser null
 
-  const quantity = amountDecimal.toNumber();
-  const price = priceDecimal?.toNumber();
-  const total = priceDecimal
-    ? amountDecimal.mul(priceDecimal).toNumber()
-    : undefined;
+    const quantity = amountDecimal.toNumber();
+    const price = priceDecimal?.toNumber();
+    const total = priceDecimal
+      ? amountDecimal.mul(priceDecimal).toNumber()
+      : undefined;
 
     const detailItem = {
       name: transaction.item.name,
@@ -47,8 +46,8 @@ export async function GET(
       unit: transaction.item.unit.name,
       code: transaction.item.subcategoryCode?.code ?? undefined,
       quantity, // number
-      price,    // number | undefined
-      total,    // number | undefined
+      price, // number | undefined
+      total, // number | undefined
     };
 
     return NextResponse.json({

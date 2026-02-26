@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { hasWriteAccess } from '@/lib/auth/roles';
@@ -8,19 +8,19 @@ import { roundToDecimals } from '@/lib/utils/round';
 
 export async function POST(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
     const body = await req.json();
 
-    const { amount, price, paymentMethod, clientName, notes, soldAt } = body
+    const { amount, price, paymentMethod, clientName, notes, soldAt } = body;
 
     // Validaciones básicas
     if (!amount || amount <= 0 || !price || price <= 0 || !paymentMethod) {
       return NextResponse.json(
         { error: 'Datos inválidos o incompletos' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function POST(
     if (!validMethods.includes(paymentMethod)) {
       return NextResponse.json(
         { error: 'Método de pago inválido' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -47,14 +47,17 @@ export async function POST(
     // Validar existencia del item
     const item = await prisma.inventoryItem.findUnique({ where: { id } });
     if (!item) {
-      return NextResponse.json({ error: 'Item no encontrado' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Item no encontrado' },
+        { status: 404 },
+      );
     }
 
     // ✅ Validar stock disponible (Decimal -> number)
     if (Number(item.quantity) < amount) {
       return NextResponse.json(
         { error: 'No hay suficiente cantidad en inventario' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -64,7 +67,7 @@ export async function POST(
     if (!hasWriteAccess(role)) {
       return NextResponse.json(
         { error: 'No autorizado para realizar ventas' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 

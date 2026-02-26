@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { hasWriteAccess } from '@/lib/auth/roles';
 import { TransactionType, PaymentMethod } from '@prisma/client';
 
@@ -22,11 +22,17 @@ export async function POST(req: Request) {
     const { items, paymentMethod, clientName, notes } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ message: 'No hay productos' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'No hay productos' },
+        { status: 400 },
+      );
     }
 
     if (!paymentMethod || typeof paymentMethod !== 'string') {
-      return NextResponse.json({ message: 'Método de pago requerido' }, { status: 400 });
+      return NextResponse.json(
+        { message: 'Método de pago requerido' },
+        { status: 400 },
+      );
     }
 
     const userId = session.user.id;
@@ -50,7 +56,7 @@ export async function POST(req: Request) {
                 Number(inventoryItem.quantity) < item.amount
               ) {
                 throw new Error(
-                  `Producto insuficiente o inexistente: ${item.itemId}`
+                  `Producto insuficiente o inexistente: ${item.itemId}`,
                 );
               }
 
@@ -70,7 +76,7 @@ export async function POST(req: Request) {
                 type: TransactionType.VENTA_GRUPAL,
                 userId,
               };
-            })
+            }),
           ),
         },
       },
@@ -81,7 +87,7 @@ export async function POST(req: Request) {
     console.error('Error en venta grupal:', error);
     return NextResponse.json(
       { message: 'Error procesando venta grupal' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

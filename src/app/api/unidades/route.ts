@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 
 // POST /api/unidades
 export async function POST(req: NextRequest) {
@@ -17,7 +17,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ data: created });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: 'Error creando unidad' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error creando unidad' },
+      { status: 500 },
+    );
   }
 }
 
@@ -38,7 +41,10 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ data: updated });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: 'Error actualizando unidad' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error actualizando unidad' },
+      { status: 500 },
+    );
   }
 }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { TransactionType } from '@prisma/client';
@@ -20,10 +20,7 @@ export async function POST(req: NextRequest) {
     const role = session?.user?.role || '';
 
     if (!hasWriteAccess(role)) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
     const raw: ProductCSV[] = await req.json();
@@ -35,13 +32,13 @@ export async function POST(req: NextRequest) {
         item.category &&
         item.unit &&
         !isNaN(Number(item.quantity)) &&
-        Number(item.quantity) > 0
+        Number(item.quantity) > 0,
     );
 
     if (validData.length === 0) {
       return NextResponse.json(
         { error: 'No hay productos válidos para cargar' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -58,7 +55,7 @@ export async function POST(req: NextRequest) {
 
       if (existing) {
         const rawQuantity = Number(item.quantity);
-    const quantity = roundToDecimals(rawQuantity, 3);
+        const quantity = roundToDecimals(rawQuantity, 3);
 
         await prisma.inventoryItem.update({
           where: { id: existing.id },
@@ -69,12 +66,12 @@ export async function POST(req: NextRequest) {
           },
         });
 
-      transactions.push({
-  itemId: existing.id,
-  amount: quantity,
-  type: TransactionType.CARGA_GRUPAL,
-  userId: userId ?? null,
-});
+        transactions.push({
+          itemId: existing.id,
+          amount: quantity,
+          type: TransactionType.CARGA_GRUPAL,
+          userId: userId ?? null,
+        });
       }
     }
 
@@ -94,7 +91,7 @@ export async function POST(req: NextRequest) {
     console.error('❌ Error en cargue grupal:', error);
     return NextResponse.json(
       { error: 'Error en el cargue grupal' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

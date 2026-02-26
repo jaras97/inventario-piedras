@@ -1,13 +1,13 @@
 // src/app/api/inventario/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/authOptions';
 import { hasWriteAccess } from '@/lib/auth/roles';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -17,7 +17,10 @@ export async function GET(
     });
 
     if (!item) {
-      return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Producto no encontrado' },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json(item);
@@ -29,7 +32,7 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -45,15 +48,19 @@ export async function PUT(
     if (!name || !categoryId || price === null || price === undefined) {
       return NextResponse.json(
         { error: 'Datos incompletos para actualizar producto' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Validación opcional para subcategoryCodeId si se usa
-    if (subcategoryCodeId !== undefined && subcategoryCodeId !== null && typeof subcategoryCodeId !== 'string') {
+    if (
+      subcategoryCodeId !== undefined &&
+      subcategoryCodeId !== null &&
+      typeof subcategoryCodeId !== 'string'
+    ) {
       return NextResponse.json(
         { error: 'Código de subcategoría inválido' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -82,7 +89,7 @@ export async function PUT(
     console.error('Error actualizando producto:', error);
     return NextResponse.json(
       { error: 'Error al actualizar producto' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 
-
-
-export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
+export async function POST(
+  req: Request,
+  context: { params: Promise<{ id: string }> },
+) {
   const { id } = await context.params;
-   const { code } = await req.json();
+  const { code } = await req.json();
 
   if (!code || typeof code !== 'string') {
     return NextResponse.json({ error: 'Código inválido' }, { status: 400 });
@@ -17,7 +18,10 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   });
 
   if (!categoria) {
-    return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 });
+    return NextResponse.json(
+      { error: 'Categoría no encontrada' },
+      { status: 404 },
+    );
   }
 
   // Validar código único dentro de la categoría
@@ -29,7 +33,10 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   });
 
   if (existe) {
-    return NextResponse.json({ error: 'Este código ya existe en la categoría' }, { status: 409 });
+    return NextResponse.json(
+      { error: 'Este código ya existe en la categoría' },
+      { status: 409 },
+    );
   }
 
   // Crear el código

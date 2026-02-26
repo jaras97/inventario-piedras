@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import ExcelJS from 'exceljs';
 import moment from 'moment-timezone';
 
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
     console.error('Error generando Excel contable:', error);
     return NextResponse.json(
       { error: 'Error generando Excel contable' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

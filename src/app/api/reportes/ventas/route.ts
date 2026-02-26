@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/db/prisma';
+import prisma from '@/lib/prisma';
 import { TransactionType } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
@@ -11,13 +11,15 @@ export async function GET(req: NextRequest) {
     if (!dateFrom || !dateTo) {
       return NextResponse.json(
         { error: 'Rango de fechas requerido' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const transactions = await prisma.inventoryTransaction.findMany({
       where: {
-        type: { in: [TransactionType.VENTA_INDIVIDUAL, TransactionType.VENTA_GRUPAL] },
+        type: {
+          in: [TransactionType.VENTA_INDIVIDUAL, TransactionType.VENTA_GRUPAL],
+        },
         createdAt: {
           gte: new Date(dateFrom),
           lte: new Date(dateTo),
