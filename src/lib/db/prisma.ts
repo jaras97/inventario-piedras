@@ -1,13 +1,20 @@
-// src/lib/db/prisma.ts
-import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
 
+// Configurar el adapter de PostgreSQL
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+// Singleton pattern para Next.js (evita múltiples conexiones)
+const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-const prisma = globalForPrisma.prisma ?? new PrismaClient()
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    adapter, // 👈 AQUÍ ESTÁ LA CLAVE
+  });
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
-export default prisma
+export default prisma;
