@@ -26,6 +26,11 @@ export default function ComboBoxInput({
 }: ComboBoxInputProps) {
   const [query, setQuery] = useState('');
 
+  // HeadlessUI Combobox onChange can receive null, so normalize to a string for the parent handler
+  const handleChange = (val: string | null) => {
+    onChange(val ?? '');
+  };
+
   const filteredOptions =
     query === ''
       ? options
@@ -34,7 +39,7 @@ export default function ComboBoxInput({
         );
 
   return (
-    <Combobox value={value} onChange={onChange}>
+    <Combobox value={value} onChange={handleChange}>
       <div className='relative w-full'>
         <div className='relative w-full'>
           <ComboboxInput

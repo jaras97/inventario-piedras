@@ -18,7 +18,7 @@ export function Select({ label, options, value, onChange }: Props) {
       <label className='text-sm block mb-1 font-medium text-gray-700'>
         {label}
       </label>
-      <Listbox value={value} onChange={onChange}>
+      <Listbox value={value ?? undefined} onChange={onChange}>
         <div className='relative'>
           <Listbox.Button className='w-full border rounded px-3 py-2 bg-white text-left text-sm flex justify-between items-center'>
             {value?.label ?? 'Seleccionar'}
